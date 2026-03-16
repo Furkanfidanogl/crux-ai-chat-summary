@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+             xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/my_graph"
+    app:startDestination="@id/nav_text">
+
+    <fragment
+        android:id="@+id/nav_text"
+        android:name="com.furkanfidanoglu.cruxaisummarize.fragment.TextDoc"
+        android:label="TextDoc"
+        tools:layout="@layout/fragment_text_doc" />
+    <fragment
+        android:id="@+id/nav_history"
+        android:name="com.furkanfidanoglu.cruxaisummarize.fragment.History"
+        android:label="fragment_history"
+        tools:layout="@layout/fragment_history" >
+        <action
+            android:id="@+id/action_nav_history_to_nav_text"
+            app:destination="@id/nav_text" />
+    </fragment>
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.furkanfidanoglu.cruxaisummarize.fragment.Profile"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile" >
+        <action
+            android:id="@+id/action_profile_to_plans"
+            app:destination="@id/plans" />
+    </fragment>
+    <fragment
+        android:id="@+id/plans"
+        android:name="com.furkanfidanoglu.cruxaisummarize.fragment.Plans"
+        android:label="Plans"
+        tools:layout="@layout/fragment_plans" >
+        <action
+            android:id="@+id/action_plans_to_nav_text"
+            app:destination="@id/nav_text" />
+    </fragment>
+</navigation>
