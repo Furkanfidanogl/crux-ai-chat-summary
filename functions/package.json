@@ -1,0 +1,21 @@
+{
+  "name": "cruxai-functions",
+  "description": "CruxAI Firebase Cloud Functions",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.3.0",
+    "@google/genai": "^1.5.0",
+    "dotenv": "^16.4.7"
+  }
+}

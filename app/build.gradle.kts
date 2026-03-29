@@ -1,6 +1,3 @@
-import java.util.Properties
-import java.io.FileInputStream
-
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services")
@@ -23,19 +20,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // local.properties dosyasını okuyoruz (Kotlin DSL tam uyumlu)
-        val properties = Properties()
-        val localPropertiesFile =
-            rootProject.file("local.properties")
-        if (localPropertiesFile.exists()) {
-            properties.load(FileInputStream(localPropertiesFile))
-        }
-        // Java/Kotlin kodunda kullanabilmek için BuildConfig'e ekliyoruz
-        buildConfigField(
-            "String",
-            "GEMINI_API_KEY",
-            "\"${properties.getProperty("GEMINI_API_KEY")}\""
-        )
+
     }
 
     buildTypes {
@@ -73,9 +58,8 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
-    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
-
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    implementation("com.google.firebase:firebase-functions")
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth") // Firebase Authentication
     implementation("com.google.firebase:firebase-storage")
