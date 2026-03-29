@@ -205,7 +205,7 @@ public class TextDoc extends Fragment {
 
                 binding.etMessage.setHint(fileName);
                 binding.etMessage.setText("");
-                Toast.makeText(getContext(), fileName + " yüklendi", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.msg_file_uploaded, fileName), Toast.LENGTH_SHORT).show();
             }
         });
 

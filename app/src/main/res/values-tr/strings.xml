@@ -207,4 +207,5 @@
     <string name="request_timeout">İstek zaman aşımına uğradı. Lütfen tekrar deneyin.</string>
     <string name="error_media_too_large">Medya dosyası çok büyük. Lütfen daha küçük bir dosya seçin.</string>
     <string name="error_timeout">Yanıt süresi aşıldı. Lütfen daha sonra tekrar deneyin.</string>
+    <string name="msg_file_uploaded">%1$s yüklendi 🚀</string>
 </resources>

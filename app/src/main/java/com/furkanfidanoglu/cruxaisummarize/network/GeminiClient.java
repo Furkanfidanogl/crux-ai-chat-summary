@@ -49,10 +49,12 @@ public final class GeminiClient {
     // ─── HISTORY MANAGEMENT ─────────────────────────────────────
     public synchronized void loadHistory(List<MessageModel> messages) {
         chatHistory.clear();
-        if (messages == null || messages.isEmpty()) return;
+        if (messages == null || messages.isEmpty())
+            return;
 
         for (MessageModel msg : messages) {
-            if (msg == null || "loading".equals(msg.getId())) continue;
+            if (msg == null || "loading".equals(msg.getId()))
+                continue;
 
             String role = msg.getRole();
             String text = msg.getContent();
@@ -65,7 +67,8 @@ public final class GeminiClient {
                 }
             }
 
-            if (!"user".equalsIgnoreCase(role) && !"model".equalsIgnoreCase(role)) continue;
+            if (!"user".equalsIgnoreCase(role) && !"model".equalsIgnoreCase(role))
+                continue;
 
             Map<String, String> entry = new HashMap<>();
             entry.put("role", role.toLowerCase(Locale.US));
@@ -85,13 +88,11 @@ public final class GeminiClient {
             String userText,
             byte[] mediaBytes,
             String mediaType,
-            GeminiCallback callback
-    ) {
+            GeminiCallback callback) {
         if (activeRequests.get() >= MAX_CONCURRENT_REQUESTS) {
             callback.onError(new GeminiException(
                     GeminiErrorType.OVERLOADED,
-                    context.getString(R.string.system_busy)
-            ));
+                    context.getString(R.string.system_busy)));
             return;
         }
 
@@ -105,15 +106,13 @@ public final class GeminiClient {
             String mediaType,
             GeminiCallback callback,
             int retryCount,
-            long startTime
-    ) {
+            long startTime) {
         // Timeout guard: 30 seconds (server has 60s, but we give client 30s)
         if (System.currentTimeMillis() - startTime > 30000) {
             activeRequests.decrementAndGet();
             callback.onError(new GeminiException(
                     GeminiErrorType.TIMEOUT,
-                    context.getString(R.string.request_timeout)
-            ));
+                    context.getString(R.string.request_timeout)));
             return;
         }
 
@@ -143,8 +142,7 @@ public final class GeminiClient {
                     activeRequests.decrementAndGet();
                     callback.onError(new GeminiException(
                             GeminiErrorType.UNKNOWN,
-                            context.getString(R.string.error_media_too_large)
-                    ));
+                            context.getString(R.string.error_media_too_large)));
                     return;
                 }
                 // Remove media from payload, send text only
@@ -193,15 +191,13 @@ public final class GeminiClient {
                         } else {
                             callback.onError(new GeminiException(
                                     GeminiErrorType.EMPTY_RESPONSE,
-                                    context.getString(R.string.error_empty)
-                            ));
+                                    context.getString(R.string.error_empty)));
                         }
                     } catch (Exception e) {
                         Log.e(TAG, "Response parsing error: " + e.getMessage());
                         callback.onError(new GeminiException(
                                 GeminiErrorType.UNKNOWN,
-                                context.getString(R.string.error_unknown)
-                        ));
+                                context.getString(R.string.error_unknown)));
                     }
                 })
                 .addOnFailureListener(executor, e -> {
@@ -223,7 +219,8 @@ public final class GeminiClient {
             case "AUDIO":
                 return "audio/mp3";
             case "DOC":
-                if (isPdf(data)) return "application/pdf";
+                if (isPdf(data))
+                    return "application/pdf";
                 return "text/plain";
             default:
                 return null;
@@ -236,7 +233,7 @@ public final class GeminiClient {
                 data[0] == 0x25 && // %
                 data[1] == 0x50 && // P
                 data[2] == 0x44 && // D
-                data[3] == 0x46;   // F
+                data[3] == 0x46; // F
     }
 
     // ─── RETRY LOGIC ────────────────────────────────────────────
@@ -246,8 +243,7 @@ public final class GeminiClient {
             String mediaType,
             GeminiCallback callback,
             int nextRetry,
-            long startTime
-    ) {
+            long startTime) {
         long delay = nextRetry * 2000L; // 2s, 4s, 6s
         Log.w(TAG, "Scheduling retry " + nextRetry + " in " + delay + "ms");
 
@@ -259,8 +255,7 @@ public final class GeminiClient {
                 Thread.currentThread().interrupt();
                 callback.onError(new GeminiException(
                         GeminiErrorType.UNKNOWN,
-                        context.getString(R.string.error_unknown)
-                ));
+                        context.getString(R.string.error_unknown)));
             }
         });
     }

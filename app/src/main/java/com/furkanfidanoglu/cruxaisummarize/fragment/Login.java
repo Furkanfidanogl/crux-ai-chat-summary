@@ -35,7 +35,7 @@ public class Login extends Fragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+            Bundle savedInstanceState) {
         // XML Bağlantısı
         binding = FragmentLoginBinding.inflate(inflater, container, false);
         return binding.getRoot();
@@ -85,11 +85,11 @@ public class Login extends Fragment {
                         GoogleSignInAccount account = task.getResult(ApiException.class);
                         firebaseAuthWithGoogle(account.getIdToken());
                     } catch (ApiException e) {
-                        Toast.makeText(requireContext(), R.string.google_error + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(requireContext(), getString(R.string.google_error) + " " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
                     }
                 }
-            }
-    );
+            });
 
     // --- FIREBASE İLE GİRİŞ KONTROLÜ (İşte istediğin mantık burada) ---
     private void firebaseAuthWithGoogle(String idToken) {
@@ -156,7 +156,8 @@ public class Login extends Fragment {
 
         auth.sendPasswordResetEmail(email)
                 .addOnSuccessListener(unused -> {
-                    Toast.makeText(requireContext(), getString(R.string.msg_reset_email_sent), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), getString(R.string.msg_reset_email_sent), Toast.LENGTH_SHORT)
+                            .show();
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(requireContext(), getString(R.string.error_reset_failed), Toast.LENGTH_LONG).show();
@@ -180,7 +181,8 @@ public class Login extends Fragment {
     private void changeScreen() {
         if (getActivity() != null) {
             Intent intent = new Intent(getActivity(), HomeActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            intent.addFlags(
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             requireActivity().finish();
         }

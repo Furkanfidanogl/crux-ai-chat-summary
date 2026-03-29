@@ -36,7 +36,7 @@ public class SignUp extends Fragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+            Bundle savedInstanceState) {
         // XML Bağlantısı
         binding = FragmentSignUpBinding.inflate(inflater, container, false);
         return binding.getRoot();
@@ -57,7 +57,6 @@ public class SignUp extends Fragment {
 
         // --- 2. GOOGLE BUTONU TIKLAMA (İsim düzeltildi: btnGoogleSign) ---
         binding.btnGoogleSignUp.setOnClickListener(v -> signInWithGoogle());
-
 
         // Linkleri ayarla
         setupWebLinks();
@@ -87,11 +86,11 @@ public class SignUp extends Fragment {
                         GoogleSignInAccount account = task.getResult(ApiException.class);
                         firebaseAuthWithGoogle(account.getIdToken());
                     } catch (ApiException e) {
-                        Toast.makeText(requireContext(), R.string.google_error + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(requireContext(), getString(R.string.google_error) + " " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
                     }
                 }
-            }
-    );
+            });
 
     // --- FIREBASE İLE KAYIT/GİRİŞ YAPAR ---
     private void firebaseAuthWithGoogle(String idToken) {
@@ -107,7 +106,8 @@ public class SignUp extends Fragment {
                     boolean isNewUser = authResult.getAdditionalUserInfo().isNewUser();
 
                     if (isNewUser) {
-                        Toast.makeText(requireContext(), getString(R.string.msg_account_created), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(requireContext(), getString(R.string.msg_account_created), Toast.LENGTH_SHORT)
+                                .show();
                     }
                     changeScreen();
                 })
@@ -149,7 +149,8 @@ public class SignUp extends Fragment {
         // 4. Firebase Kayıt İşlemi
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener(authResult -> {
-                    Toast.makeText(requireContext(), getString(R.string.msg_account_created), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(requireContext(), getString(R.string.msg_account_created), Toast.LENGTH_SHORT)
+                            .show();
                     changeScreen();
                 })
                 .addOnFailureListener(e -> {
@@ -187,7 +188,8 @@ public class SignUp extends Fragment {
     private void changeScreen() {
         if (getActivity() != null) {
             Intent intent = new Intent(getActivity(), HomeActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            intent.addFlags(
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             requireActivity().finish();
         }

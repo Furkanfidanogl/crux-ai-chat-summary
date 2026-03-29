@@ -1,5 +1,7 @@
 package com.furkanfidanoglu.cruxaisummarize.util.managers;
 
+import android.util.Log;
+
 import com.furkanfidanoglu.cruxaisummarize.data.model.FirebaseDB;
 import com.furkanfidanoglu.cruxaisummarize.data.model.MessageModel;
 import com.google.android.gms.tasks.Task;
@@ -86,14 +88,16 @@ public class FirebaseDBManager {
         StorageReference ref = storage.getReference().child(path);
 
         ref.putBytes(fileBytes)
-                .addOnSuccessListener(task -> ref.getDownloadUrl().addOnSuccessListener(uri -> callback.onSuccess(uri.toString())))
+                .addOnSuccessListener(
+                        task -> ref.getDownloadUrl().addOnSuccessListener(uri -> callback.onSuccess(uri.toString())))
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
     // --- 2. KULLANICI OLUŞTURMA ---
     public void createUserIfNotExist() {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (firebaseUser == null) return;
+        if (firebaseUser == null)
+            return;
 
         DocumentReference docRef = db.collection(COLLECTION_USERS).document(firebaseUser.getUid());
 
@@ -103,8 +107,7 @@ public class FirebaseDBManager {
                 FirebaseDB newUser = new FirebaseDB(
                         firebaseUser.getUid(),
                         firebaseUser.getEmail(),
-                        Timestamp.now()
-                );
+                        Timestamp.now());
                 newUser.setUsage_date(getTodayDateString());
                 docRef.set(newUser);
             }
@@ -124,7 +127,8 @@ public class FirebaseDBManager {
         db.runTransaction(transaction -> {
             DocumentSnapshot snapshot = transaction.get(docRef);
             FirebaseDB user = snapshot.toObject(FirebaseDB.class);
-            if (user == null) return null;
+            if (user == null)
+                return null;
 
             String today = getTodayDateString();
             String lastDate = user.getUsage_date();
@@ -160,7 +164,8 @@ public class FirebaseDBManager {
     // --- 4. AKILLI SAYAÇ ---
     public void incrementUsage(String type, long sizeOrLength) {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (firebaseUser == null) return;
+        if (firebaseUser == null)
+            return;
 
         DocumentReference docRef = db.collection(COLLECTION_USERS).document(firebaseUser.getUid());
 
@@ -179,22 +184,29 @@ public class FirebaseDBManager {
 
     private int calculateSmartSavedTime(String type, long sizeOrLength) {
         int savedMinutes = 1;
-        if (type == null) type = "TEXT";
+        if (type == null)
+            type = "TEXT";
         switch (type) {
             case "TEXT":
             case "LINK":
-                if (sizeOrLength > 0) savedMinutes = (int) (sizeOrLength / 600);
-                if (savedMinutes < 1) savedMinutes = 1;
+                if (sizeOrLength > 0)
+                    savedMinutes = (int) (sizeOrLength / 600);
+                if (savedMinutes < 1)
+                    savedMinutes = 1;
                 break;
             case "AUDIO":
                 long sizeInMbAudio = sizeOrLength / (1024 * 1024);
-                if (sizeInMbAudio < 1) savedMinutes = 2;
-                else savedMinutes = (int) sizeInMbAudio + 2;
+                if (sizeInMbAudio < 1)
+                    savedMinutes = 2;
+                else
+                    savedMinutes = (int) sizeInMbAudio + 2;
                 break;
             case "DOC":
                 long sizeInMbDoc = sizeOrLength / (1024 * 1024);
-                if (sizeInMbDoc < 1) savedMinutes = 5;
-                else savedMinutes = (int) (sizeInMbDoc * 3) + 5;
+                if (sizeInMbDoc < 1)
+                    savedMinutes = 5;
+                else
+                    savedMinutes = (int) (sizeInMbDoc * 3) + 5;
                 break;
             case "IMAGE":
                 savedMinutes = 3;
@@ -208,15 +220,15 @@ public class FirebaseDBManager {
     // --- 5. MESAJ KAYDETME ---
     public void saveMessage(String chatId, MessageModel message) {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (firebaseUser == null) return;
+        if (firebaseUser == null)
+            return;
 
         MessageModel dbMessage = new MessageModel(
                 message.getId(),
                 message.getRole(),
                 message.getContent(),
                 message.getType(),
-                message.getTimestamp()
-        );
+                message.getTimestamp());
         dbMessage.setImageUrl(message.getImageUrl());
         dbMessage.setAudioUrl(message.getAudioUrl());
         dbMessage.setDocUrl(message.getDocUrl());
@@ -233,7 +245,8 @@ public class FirebaseDBManager {
 
     public void updateChatPreview(String chatId, String lastMessage, String type, Timestamp timestamp) {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (firebaseUser == null) return;
+        if (firebaseUser == null)
+            return;
 
         String title = lastMessage.length() > 30 ? lastMessage.substring(0, 30) + "..." : lastMessage;
         MessageModel preview = new MessageModel(chatId, "history", title, type, timestamp);
@@ -247,7 +260,8 @@ public class FirebaseDBManager {
 
     public void getUserChats(ChatListCallback callback) {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (firebaseUser == null) return;
+        if (firebaseUser == null)
+            return;
 
         db.collection(COLLECTION_USERS)
                 .document(firebaseUser.getUid())
@@ -281,16 +295,26 @@ public class FirebaseDBManager {
         chatRef.collection("messages").get().addOnCompleteListener(task -> {
             WriteBatch batch = db.batch();
 
+            List<Task<Void>> deleteTasks = new ArrayList<>();
             if (task.isSuccessful() && task.getResult() != null) {
                 for (DocumentSnapshot doc : task.getResult()) {
                     MessageModel msg = doc.toObject(MessageModel.class);
-                    if (msg != null) deleteMediaIfExists(msg);
+
+                    if (msg != null) {
+                        deleteTasks.add(deleteAllMediaOfMessage(msg)); // 🔥 BURASI ÖNEMLİ
+                    }
+
                     batch.delete(doc.getReference());
                 }
             }
+
             batch.delete(chatRef);
-            batch.commit()
-                    .addOnSuccessListener(aVoid -> callback.onSuccess())
+            Tasks.whenAll(deleteTasks)
+                    .addOnSuccessListener(unused -> {
+                        batch.commit()
+                                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+                    })
                     .addOnFailureListener(e -> callback.onError(e.getMessage()));
         });
     }
@@ -325,14 +349,17 @@ public class FirebaseDBManager {
 
                 // Silinecek tüm referansları bu listede topluyoruz
                 List<DocumentReference> allRefsToDelete = new ArrayList<>();
+                List<Task<Void>> deleteTasks = new ArrayList<>();
 
                 // A. Mesajları listeye ekle ve Medyaları sil
                 for (Object obj : results) {
                     QuerySnapshot msgSnapshot = (QuerySnapshot) obj;
                     for (DocumentSnapshot msgDoc : msgSnapshot) {
                         MessageModel msg = msgDoc.toObject(MessageModel.class);
-                        if (msg != null) deleteMediaIfExists(msg); // Storage'dan sil
-                        allRefsToDelete.add(msgDoc.getReference()); // Listeye ekle
+                        if (msg != null) {
+                            deleteTasks.add(deleteAllMediaOfMessage(msg)); // 🔥 BURASI
+                        }
+                        allRefsToDelete.add(msgDoc.getReference());
                     }
                 }
 
@@ -341,29 +368,31 @@ public class FirebaseDBManager {
                     allRefsToDelete.add(chatDoc.getReference());
                 }
 
-                // 4. BATCH CHUNKING (Parçalara Bölme)
-                // Firestore limiti: 500 işlem. Biz her 450'de bir yeni paket yapacağız (Garanti olsun).
-                int batchSize = 450;
-                List<Task<Void>> batchTasks = new ArrayList<>();
+                Tasks.whenAll(deleteTasks)
+                        .addOnSuccessListener(unused -> {
 
-                for (int i = 0; i < allRefsToDelete.size(); i += batchSize) {
-                    WriteBatch batch = db.batch();
+                            // 4. BATCH CHUNKING
+                            int batchSize = 450;
+                            List<Task<Void>> batchTasks = new ArrayList<>();
 
-                    int end = Math.min(i + batchSize, allRefsToDelete.size());
-                    List<DocumentReference> subList = allRefsToDelete.subList(i, end);
+                            for (int i = 0; i < allRefsToDelete.size(); i += batchSize) {
+                                WriteBatch batch = db.batch();
 
-                    for (DocumentReference ref : subList) {
-                        batch.delete(ref);
-                    }
+                                int end = Math.min(i + batchSize, allRefsToDelete.size());
+                                List<DocumentReference> subList = allRefsToDelete.subList(i, end);
 
-                    // Bu paketi (Chunk) kuyruğa ekle
-                    batchTasks.add(batch.commit());
-                }
+                                for (DocumentReference ref : subList) {
+                                    batch.delete(ref);
+                                }
 
-                // 5. Tüm paketler başarıyla silindiğinde haber ver
-                Tasks.whenAll(batchTasks)
-                        .addOnSuccessListener(aVoid -> callback.onSuccess())
-                        .addOnFailureListener(e -> callback.onError("Partial delete error: " + e.getMessage()));
+                                batchTasks.add(batch.commit());
+                            }
+
+                            Tasks.whenAll(batchTasks)
+                                    .addOnSuccessListener(aVoid -> callback.onSuccess())
+                                    .addOnFailureListener(e -> callback.onError("Partial delete error: " + e.getMessage()));
+                        })
+                        .addOnFailureListener(e -> callback.onError("Storage delete error: " + e.getMessage()));
 
             }).addOnFailureListener(e -> callback.onError("Fetch error: " + e.getMessage()));
 
@@ -371,22 +400,90 @@ public class FirebaseDBManager {
     }
 
     private void deleteMediaIfExists(MessageModel msg) {
-        if (msg.getImageUrl() != null) deleteFileFromStorage(msg.getImageUrl());
-        if (msg.getAudioUrl() != null) deleteFileFromStorage(msg.getAudioUrl());
-        if (msg.getDocUrl() != null) deleteFileFromStorage(msg.getDocUrl());
+        if (msg.getImageUrl() != null)
+            deleteFileFromStorage(msg.getImageUrl());
+        if (msg.getAudioUrl() != null)
+            deleteFileFromStorage(msg.getAudioUrl());
+        if (msg.getDocUrl() != null)
+            deleteFileFromStorage(msg.getDocUrl());
+    }
+
+    // 🔥 YENİ - storage silme task
+    private Task<Void> deleteFileTask(String url) {
+        try {
+            // 🔥 URL'den path çıkar
+            String[] parts = url.split("/o/");
+            if (parts.length < 2) return Tasks.forResult(null);
+
+            String pathWithParams = parts[1];
+            String pathEncoded = pathWithParams.split("\\?")[0];
+            String path = java.net.URLDecoder.decode(pathEncoded, "UTF-8");
+
+            // 🔥 direkt path'ten referans al
+            StorageReference ref = storage.getReference().child(path);
+
+            return ref.delete().continueWith(task -> {
+                if (!task.isSuccessful()) {
+                    Log.e("STORAGE_DELETE", "Silinemedi: " + path);
+                } else {
+                    Log.d("STORAGE_DELETE", "Silindi: " + path);
+                }
+                return null;
+            });
+
+        } catch (Exception e) {
+            Log.e("STORAGE_DELETE", "Parse fail: " + url);
+            return Tasks.forResult(null);
+        }
+    }
+
+    // 🔥 YENİ - message içindeki tüm medyaları sil
+    private Task<Void> deleteAllMediaOfMessage(MessageModel msg) {
+        List<Task<Void>> tasks = new ArrayList<>();
+
+        if (msg.getImageUrl() != null)
+            tasks.add(deleteFileTask(msg.getImageUrl()));
+
+        if (msg.getAudioUrl() != null)
+            tasks.add(deleteFileTask(msg.getAudioUrl()));
+
+        if (msg.getDocUrl() != null)
+            tasks.add(deleteFileTask(msg.getDocUrl()));
+
+        return Tasks.whenAll(tasks);
     }
 
     private void deleteFileFromStorage(String url) {
+        if (url == null || url.isEmpty())
+            return;
         try {
             StorageReference photoRef = storage.getReferenceFromUrl(url);
-            photoRef.delete();
+            photoRef.delete().addOnFailureListener(e -> {
+                // Eğer doğrudan silme başarısız olursa, URL'yi manuel çözümle ve sil
+                deleteFromExtractedPath(url);
+            });
         } catch (Exception e) {
+            deleteFromExtractedPath(url);
+        }
+    }
+
+    private void deleteFromExtractedPath(String url) {
+        try {
+            String[] parts = url.split("/o/");
+            if (parts.length > 1) {
+                String pathWithParams = parts[1];
+                String pathEncoded = pathWithParams.split("\\?")[0];
+                String path = java.net.URLDecoder.decode(pathEncoded, "UTF-8");
+                storage.getReference().child(path).delete();
+            }
+        } catch (Exception ignore) {
         }
     }
 
     public void getMessages(String chatId, MessagesCallback callback) {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (firebaseUser == null) return;
+        if (firebaseUser == null)
+            return;
 
         db.collection(COLLECTION_USERS)
                 .document(firebaseUser.getUid())
@@ -411,26 +508,31 @@ public class FirebaseDBManager {
 
     public interface MessagesCallback {
         void onSuccess(List<MessageModel> messages);
+
         void onError(String error);
     }
 
     public interface ChatListCallback {
         void onSuccess(List<MessageModel> chatList);
+
         void onError(String error);
     }
 
     public interface LimitCallback {
         void onSuccess();
+
         void onLimitReached(String message);
     }
 
     public interface DeleteCallback {
         void onSuccess();
+
         void onError(String error);
     }
 
     public interface StorageCallback {
         void onSuccess(String mediaUrl);
+
         void onError(String error);
     }
 }

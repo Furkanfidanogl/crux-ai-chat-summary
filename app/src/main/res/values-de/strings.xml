@@ -209,4 +209,5 @@
     <string name="request_timeout">Zeitüberschreitung der Anfrage. Bitte versuchen Sie es erneut.</string>
     <string name="error_media_too_large">Mediendatei ist zu groß. Bitte wählen Sie eine kleinere Datei.</string>
     <string name="error_timeout">Antwortzeit überschritten. Bitte versuchen Sie es später erneut.</string>
+    <string name="msg_file_uploaded">%1$s hochgeladen 🚀</string>
 </resources>

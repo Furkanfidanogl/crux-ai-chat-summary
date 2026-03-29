@@ -1,29 +1,22 @@
-require("dotenv").config();
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const { GoogleGenAI } = require("@google/genai");
 
 admin.initializeApp();
 
 // ─── CONFIG ──────────────────────────────────────────────────────
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const geminiApiKey = defineSecret("GEMINI_SECRET_KEY");
 const MODEL_NAME = "gemini-3.1-flash-lite-preview";
 const MAX_OUTPUT_TOKENS = 8192;
 const TEMPERATURE = 0.7;
 const TOP_P = 0.9;
 const DEFAULT_SYSTEM_PROMPT = "You are CruxAI. Help the user safely.";
 
-// Validate API key at cold-start
-if (!GEMINI_API_KEY) {
-  console.error("CRITICAL: GEMINI_API_KEY is not set in .env");
-}
-
-const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-
 // ─── REMOTE CONFIG CACHE ────────────────────────────────────────
 let cachedSystemPrompt = null;
 let promptLastFetched = 0;
-const PROMPT_CACHE_TTL = 3600 * 1000; // 1 hour
+const PROMPT_CACHE_TTL = 3600 * 1000;
 
 async function getSystemPrompt() {
   const now = Date.now();
@@ -56,8 +49,8 @@ function resolveMimeType(mediaType, mimeType) {
   switch (mediaType) {
     case "IMAGE": return "image/jpeg";
     case "AUDIO": return "audio/mp3";
-    case "DOC":   return "application/pdf";
-    default:      return "application/octet-stream";
+    case "DOC": return "application/pdf";
+    default: return "application/octet-stream";
   }
 }
 
@@ -110,11 +103,20 @@ exports.processGemini = onCall(
     memory: "512MiB",
     timeoutSeconds: 60,
     maxInstances: 50,
-    enforceAppCheck: true, // App Check enforced via PlayIntegrity (release) / Debug (debug)
+    secrets: [geminiApiKey],
+    // enforceAppCheck DEVRE DIŞI — App Check token sorunu UNAUTHENTICATED hatasına yol açıyordu
+    enforceAppCheck: false,
   },
   async (request) => {
+    // ── Detaylı log ──
+    console.log("processGemini called. Auth present:", !!request.auth);
+    if (request.auth) {
+      console.log("Auth UID:", request.auth.uid);
+    }
+
     // ── Auth check ──
     if (!request.auth) {
+      console.error("AUTH FAILED: request.auth is null. User is not signed in or token expired.");
       throw new HttpsError("unauthenticated", "Authentication required.");
     }
 
@@ -134,6 +136,15 @@ exports.processGemini = onCall(
     }
 
     try {
+      // ── API Key'i runtime'da al ──
+      const apiKey = geminiApiKey.value();
+      if (!apiKey) {
+        console.error("CRITICAL: GEMINI_API_KEY secret is not set!");
+        throw new HttpsError("internal", "Server configuration error.");
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+
       const systemPrompt = await getSystemPrompt();
       const contents = buildContents(text, mediaBase64, mediaType, mimeType, history);
 
@@ -203,3 +214,4 @@ exports.processGemini = onCall(
     }
   }
 );
+

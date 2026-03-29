@@ -1,0 +1,273 @@
+[debug] [2026-03-29T11:43:18.847Z] ----------------------------------------------------------------------
+[debug] [2026-03-29T11:43:18.850Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Furka\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions --debug
+[debug] [2026-03-29T11:43:18.850Z] CLI Version:   15.12.0
+[debug] [2026-03-29T11:43:18.850Z] Platform:      win32
+[debug] [2026-03-29T11:43:18.850Z] Node Version:  v20.16.0
+[debug] [2026-03-29T11:43:18.850Z] Time:          Sun Mar 29 2026 14:43:18 GMT+0300 (GMT+03:00)
+[debug] [2026-03-29T11:43:18.850Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-03-29T11:43:20.994Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-29T11:43:20.995Z] > authorizing via signed-in user (furkan7188a@gmail.com)
+[debug] [2026-03-29T11:43:20.995Z] [iam] checking project cruxai-summarize for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-03-29T11:43:20.997Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:20.997Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:20.999Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize:testIamPermissions [none]
+[debug] [2026-03-29T11:43:20.999Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize:testIamPermissions  x-goog-user-project=cruxai-summarize
+[debug] [2026-03-29T11:43:20.999Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-03-29T11:43:22.130Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize:testIamPermissions 200
+[debug] [2026-03-29T11:43:22.131Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-03-29T11:43:22.132Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:22.132Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:22.133Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/cruxai-summarize/serviceAccounts/cruxai-summarize@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-03-29T11:43:22.133Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/cruxai-summarize/serviceAccounts/cruxai-summarize@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-03-29T11:43:23.075Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/cruxai-summarize/serviceAccounts/cruxai-summarize@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2026-03-29T11:43:23.076Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/cruxai-summarize/serviceAccounts/cruxai-summarize@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'cruxai-summarize'...
+[info] 
+[info] i  deploying functions 
+[debug] [2026-03-29T11:43:23.081Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:23.081Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:23.082Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize [none]
+[debug] [2026-03-29T11:43:23.312Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize 200
+[debug] [2026-03-29T11:43:23.312Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize {"projectNumber":"491399476670","projectId":"cruxai-summarize","lifecycleState":"ACTIVE","name":"CruxAI-Summarize","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-12-11T20:44:35.952730Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2026-03-29T11:43:23.315Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:23.316Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:23.316Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/cruxai-summarize/adminSdkConfig [none]
+[debug] [2026-03-29T11:43:23.938Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/cruxai-summarize/adminSdkConfig 200
+[debug] [2026-03-29T11:43:23.938Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/cruxai-summarize/adminSdkConfig {"projectId":"cruxai-summarize","storageBucket":"cruxai-summarize.firebasestorage.app"}
+[debug] [2026-03-29T11:43:23.939Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:23.939Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:23.940Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/cruxai-summarize/configs [none]
+[debug] [2026-03-29T11:43:24.312Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/cruxai-summarize/configs 200
+[debug] [2026-03-29T11:43:24.313Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/cruxai-summarize/configs {}
+[debug] [2026-03-29T11:43:24.314Z] Validating nodejs source
+[warn] !  functions: Runtime Node.js 20 will be deprecated on 2026-04-30 and will be decommissioned on 2026-10-30, after which you will not be able to deploy without upgrading. Consider upgrading now to avoid disruption. See https://cloud.google.com/functions/docs/runtime-support for full details on the lifecycle policy 
+[warn] !  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[warn] !  functions: Please note that there will be breaking changes when you upgrade. 
+[debug] [2026-03-29T11:43:25.709Z] > [functions] package.json contents: {
+  "name": "cruxai-functions",
+  "description": "CruxAI Firebase Cloud Functions",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.3.0",
+    "@google/genai": "^1.5.0"
+  }
+}
+[debug] [2026-03-29T11:43:25.710Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[debug] [2026-03-29T11:43:25.711Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-03-29T11:43:25.722Z] Found firebase-functions binary at 'C:\Users\Furka\AndroidStudioProjects\crux-ai-chat-summary\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8395
+
+[debug] [2026-03-29T11:43:26.640Z] Got response from /__/functions.yaml {"endpoints":{"processGemini":{"availableMemoryMb":512,"timeoutSeconds":60,"minInstances":null,"maxInstances":50,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","secretEnvironmentVariables":[{"key":"GEMINI_API_KEY"}],"labels":{},"callableTrigger":{},"entryPoint":"processGemini"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{},"params":[{"type":"secret","name":"GEMINI_API_KEY"}]}
+[info] i  extensions: ensuring required API firebaseextensions.googleapis.com is enabled... 
+[debug] [2026-03-29T11:43:31.836Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-29T11:43:31.837Z] > authorizing via signed-in user (furkan7188a@gmail.com)
+[debug] [2026-03-29T11:43:31.839Z] [iam] checking project cruxai-summarize for permissions ["firebase.projects.get","firebaseextensions.instances.list"]
+[debug] [2026-03-29T11:43:31.843Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:31.846Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:31.848Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize:testIamPermissions [none]
+[debug] [2026-03-29T11:43:31.849Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize:testIamPermissions  x-goog-user-project=cruxai-summarize
+[debug] [2026-03-29T11:43:31.849Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2026-03-29T11:43:32.796Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize:testIamPermissions 200
+[debug] [2026-03-29T11:43:32.797Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2026-03-29T11:43:32.797Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:32.797Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:32.798Z] >>> [apiv2][query] GET https://firebaseextensions.googleapis.com/v1beta/projects/cruxai-summarize/instances pageSize=100&pageToken=
+[debug] [2026-03-29T11:43:34.078Z] <<< [apiv2][status] GET https://firebaseextensions.googleapis.com/v1beta/projects/cruxai-summarize/instances 200
+[debug] [2026-03-29T11:43:34.079Z] <<< [apiv2][body] GET https://firebaseextensions.googleapis.com/v1beta/projects/cruxai-summarize/instances {}
+[info] i  functions: Loaded environment variables from .env. 
+[info] i  functions: preparing functions directory for uploading... 
+[info] i  functions: packaged C:\Users\Furka\AndroidStudioProjects\crux-ai-chat-summary\functions (34.52 KB) for uploading 
+[debug] [2026-03-29T11:43:34.216Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:34.216Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:34.216Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/cruxai-summarize/locations/-/functions [none]
+[debug] [2026-03-29T11:43:34.912Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/cruxai-summarize/locations/-/functions 200
+[debug] [2026-03-29T11:43:34.912Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/cruxai-summarize/locations/-/functions {}
+[debug] [2026-03-29T11:43:34.913Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:34.913Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:34.914Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/cruxai-summarize/locations/-/functions filter=environment%3D%22GEN_2%22
+[debug] [2026-03-29T11:43:35.990Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/cruxai-summarize/locations/-/functions 200
+[debug] [2026-03-29T11:43:35.990Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/cruxai-summarize/locations/-/functions {"functions":[{"name":"projects/cruxai-summarize/locations/us-central1/functions/processGemini","buildConfig":{"build":"projects/491399476670/locations/us-central1/builds/02692761-fa12-4605-860b-2b89b05397cd","runtime":"nodejs20","entryPoint":"processGemini","source":{"storageSource":{"bucket":"gcf-v2-sources-491399476670-us-central1","object":"processGemini/function-source.zip","generation":"1774747141283542"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/cruxai-summarize/locations/us-central1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-491399476670-us-central1","object":"processGemini/function-source.zip","generation":"1774747141283542"}},"dockerRegistry":"ARTIFACT_REGISTRY","serviceAccount":"projects/cruxai-summarize/serviceAccounts/491399476670-compute@developer.gserviceaccount.com","automaticUpdatePolicy":{}},"serviceConfig":{"service":"projects/cruxai-summarize/locations/us-central1/services/processgemini","timeoutSeconds":60,"environmentVariables":{"GEMINI_API_KEY":"AIzaSyB2h9DjmYejKzSk4yVz63vHondMrjTZV7A","FIREBASE_CONFIG":"{\"projectId\":\"cruxai-summarize\",\"storageBucket\":\"cruxai-summarize.firebasestorage.app\"}","GCLOUD_PROJECT":"cruxai-summarize","EVENTARC_CLOUD_EVENT_SOURCE":"projects/cruxai-summarize/locations/us-central1/services/processGemini","FUNCTION_TARGET":"processGemini","LOG_EXECUTION_ID":"true"},"maxInstanceCount":50,"ingressSettings":"ALLOW_ALL","uri":"https://processgemini-inl6tfovla-uc.a.run.app","serviceAccountEmail":"491399476670-compute@developer.gserviceaccount.com","availableMemory":"512Mi","allTrafficOnLatestRevision":true,"revision":"processgemini-00008-lof","maxInstanceRequestConcurrency":80,"availableCpu":"1"},"state":"ACTIVE","updateTime":"2026-03-29T01:19:58.346890423Z","labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"e12f39f6fe06dc063a5ff8f133f419e20b291e9b"},"environment":"GEN_2","url":"https://us-central1-cruxai-summarize.cloudfunctions.net/processGemini","createTime":"2026-03-28T23:22:15.995233994Z","satisfiesPzi":true}]}
+[info] i  functions: ensuring required API run.googleapis.com is enabled... 
+[info] i  functions: ensuring required API eventarc.googleapis.com is enabled... 
+[info] i  functions: ensuring required API pubsub.googleapis.com is enabled... 
+[info] i  functions: ensuring required API storage.googleapis.com is enabled... 
+[info] i  functions: generating the service identity for pubsub.googleapis.com... 
+[debug] [2026-03-29T11:43:35.996Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:35.996Z] Checked if tokens are valid: true, expires at: 1774788009357
+[info] i  functions: generating the service identity for eventarc.googleapis.com... 
+[debug] [2026-03-29T11:43:35.996Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:35.996Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:35.997Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/491399476670/services/pubsub.googleapis.com:generateServiceIdentity [none]
+[debug] [2026-03-29T11:43:35.997Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1beta1/projects/491399476670/services/pubsub.googleapis.com:generateServiceIdentity  x-goog-user-project=491399476670
+[debug] [2026-03-29T11:43:35.997Z] >>> [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/491399476670/services/pubsub.googleapis.com:generateServiceIdentity {}
+[debug] [2026-03-29T11:43:35.998Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/491399476670/services/eventarc.googleapis.com:generateServiceIdentity [none]
+[debug] [2026-03-29T11:43:35.999Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1beta1/projects/491399476670/services/eventarc.googleapis.com:generateServiceIdentity  x-goog-user-project=491399476670
+[debug] [2026-03-29T11:43:35.999Z] >>> [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/491399476670/services/eventarc.googleapis.com:generateServiceIdentity {}
+[debug] [2026-03-29T11:43:37.244Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/491399476670/services/pubsub.googleapis.com:generateServiceIdentity 200
+[debug] [2026-03-29T11:43:37.245Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/491399476670/services/pubsub.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-491399476670@gcp-sa-pubsub.iam.gserviceaccount.com","uniqueId":"108989392331146656027"}}
+[debug] [2026-03-29T11:43:37.294Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/491399476670/services/eventarc.googleapis.com:generateServiceIdentity 200
+[debug] [2026-03-29T11:43:37.295Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/491399476670/services/eventarc.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-491399476670@gcp-sa-eventarc.iam.gserviceaccount.com","uniqueId":"101853902506969363609"}}
+[info] i  functions: ensuring required API secretmanager.googleapis.com is enabled... 
+[debug] [2026-03-29T11:43:37.311Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:37.313Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:37.321Z] >>> [apiv2][query] GET https://secretmanager.googleapis.com/v1/projects/cruxai-summarize/secrets/GEMINI_API_KEY/versions/latest [none]
+[debug] [2026-03-29T11:43:37.789Z] <<< [apiv2][status] GET https://secretmanager.googleapis.com/v1/projects/cruxai-summarize/secrets/GEMINI_API_KEY/versions/latest 200
+[debug] [2026-03-29T11:43:37.789Z] <<< [apiv2][body] GET https://secretmanager.googleapis.com/v1/projects/cruxai-summarize/secrets/GEMINI_API_KEY/versions/latest {"name":"projects/491399476670/secrets/GEMINI_API_KEY/versions/2","createTime":"2026-03-29T11:40:27.189506Z","state":"ENABLED","replicationStatus":{"automatic":{}},"etag":"\"164e283355e502\""}
+[debug] [2026-03-29T11:43:37.791Z] Resolved secret version of GEMINI_API_KEY to 2.
+[debug] [2026-03-29T11:43:37.793Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:37.794Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:37.794Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize [none]
+[debug] [2026-03-29T11:43:38.021Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize 200
+[debug] [2026-03-29T11:43:38.022Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/cruxai-summarize {"projectNumber":"491399476670","projectId":"cruxai-summarize","lifecycleState":"ACTIVE","name":"CruxAI-Summarize","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-12-11T20:44:35.952730Z"}
+[debug] [2026-03-29T11:43:38.023Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:38.023Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:38.024Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/491399476670 [none]
+[debug] [2026-03-29T11:43:38.473Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/491399476670 403
+[debug] [2026-03-29T11:43:38.473Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/491399476670 {"error":{"code":403,"message":"Compute Engine API has not been used in project 491399476670 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=491399476670 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 491399476670 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=491399476670 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=491399476670","containerInfo":"491399476670","service":"compute.googleapis.com","serviceTitle":"Compute Engine API","consumer":"projects/491399476670"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 491399476670 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=491399476670 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=491399476670"}]}]}}
+[debug] [2026-03-29T11:43:38.474Z] unable to look up default compute service account. Falling back to 491399476670-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 491399476670 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=491399476670 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 491399476670 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=491399476670 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=491399476670","containerInfo":"491399476670","service":"compute.googleapis.com","serviceTitle":"Compute Engine API","consumer":"projects/491399476670"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 491399476670 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=491399476670 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=491399476670"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/491399476670 had HTTP Error: 403, Compute Engine API has not been used in project 491399476670 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=491399476670 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[info] i  functions: ensuring 491399476670-compute@developer.gserviceaccount.com access to secret GEMINI_API_KEY. 
+[debug] [2026-03-29T11:43:38.475Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:38.476Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:38.476Z] >>> [apiv2][query] GET https://secretmanager.googleapis.com/v1/projects/cruxai-summarize/secrets/GEMINI_API_KEY:getIamPolicy [none]
+[debug] [2026-03-29T11:43:38.888Z] <<< [apiv2][status] GET https://secretmanager.googleapis.com/v1/projects/cruxai-summarize/secrets/GEMINI_API_KEY:getIamPolicy 200
+[debug] [2026-03-29T11:43:38.888Z] <<< [apiv2][body] GET https://secretmanager.googleapis.com/v1/projects/cruxai-summarize/secrets/GEMINI_API_KEY:getIamPolicy {"version":1,"etag":"BwZOGB0Bmbc=","bindings":[{"role":"roles/secretmanager.secretAccessor","members":["serviceAccount:491399476670-compute@developer.gserviceaccount.com"]}]}
+[info] +  secretmanager: Granted roles/secretmanager.secretAccessor on projects/cruxai-summarize/secrets/GEMINI_API_KEY to 491399476670-compute@developer.gserviceaccount.com 
+[info] +  functions: ensured 491399476670-compute@developer.gserviceaccount.com access to GEMINI_API_KEY. 
+[debug] [2026-03-29T11:43:38.892Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:38.892Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:38.893Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/cruxai-summarize/billingInfo [none]
+[debug] [2026-03-29T11:43:39.379Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/cruxai-summarize/billingInfo 200
+[debug] [2026-03-29T11:43:39.380Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/cruxai-summarize/billingInfo {"name":"projects/cruxai-summarize/billingInfo","projectId":"cruxai-summarize","billingAccountName":"billingAccounts/010DA4-D593C3-9140F1","billingEnabled":true}
+[debug] [2026-03-29T11:43:39.383Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:39.383Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:39.384Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v2/projects/cruxai-summarize/locations/us-central1/functions:generateUploadUrl [none]
+[debug] [2026-03-29T11:43:40.244Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v2/projects/cruxai-summarize/locations/us-central1/functions:generateUploadUrl 200
+[debug] [2026-03-29T11:43:40.244Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v2/projects/cruxai-summarize/locations/us-central1/functions:generateUploadUrl {"uploadUrl":"https://storage.googleapis.com/gcf-v2-uploads-491399476670.us-central1.cloudfunctions.appspot.com/6a82671c-0f5e-427f-84b4-7c3613ba9ccd.zip?GoogleAccessId=service-491399476670@gcf-admin-robot.iam.gserviceaccount.com&Expires=1774786419&Signature=bQMaLpQmnHtIkLjeHTHQ0JgdbJqgvh1xPmjw5opohVbbSuLl8I9D%2FGco0U%2BtwtSPJxSmqIYmLe7eVWIgGFqCu7BAKh%2FUvbucem9BgQGmjnj2UBTPQosU5W5iZgbcK9Tc23rxk%2F3bWcYnro77CYeLh%2FzfmoFXNjNLFXxJkuA7gww2ooIy%2BIix6yUMxZEZpF3hGTYBiGZ3j9YPTuz5kuxCBJmbXsGxFP9VfAecBELAQ%2F%2F6usx5XbDSE%2FXEYPukTKoNUPyivIW6ZLBpk4n6Z%2FtpVculJ4kmv3Tok8pWrQDJvRHnxcxcqlokjbi7pBF9%2Fl0pp2UO%2FzuxmNyVjNg3RPPUmQ%3D%3D","storageSource":{"bucket":"gcf-v2-uploads-491399476670.us-central1.cloudfunctions.appspot.com","object":"6a82671c-0f5e-427f-84b4-7c3613ba9ccd.zip"}}
+[debug] [2026-03-29T11:43:40.248Z] >>> [apiv2][query] PUT https://storage.googleapis.com/gcf-v2-uploads-491399476670.us-central1.cloudfunctions.appspot.com/6a82671c-0f5e-427f-84b4-7c3613ba9ccd.zip GoogleAccessId=service-491399476670%40gcf-admin-robot.iam.gserviceaccount.com&Expires=1774786419&Signature=bQMaLpQmnHtIkLjeHTHQ0JgdbJqgvh1xPmjw5opohVbbSuLl8I9D%2FGco0U%2BtwtSPJxSmqIYmLe7eVWIgGFqCu7BAKh%2FUvbucem9BgQGmjnj2UBTPQosU5W5iZgbcK9Tc23rxk%2F3bWcYnro77CYeLh%2FzfmoFXNjNLFXxJkuA7gww2ooIy%2BIix6yUMxZEZpF3hGTYBiGZ3j9YPTuz5kuxCBJmbXsGxFP9VfAecBELAQ%2F%2F6usx5XbDSE%2FXEYPukTKoNUPyivIW6ZLBpk4n6Z%2FtpVculJ4kmv3Tok8pWrQDJvRHnxcxcqlokjbi7pBF9%2Fl0pp2UO%2FzuxmNyVjNg3RPPUmQ%3D%3D
+[debug] [2026-03-29T11:43:40.248Z] >>> [apiv2][body] PUT https://storage.googleapis.com/gcf-v2-uploads-491399476670.us-central1.cloudfunctions.appspot.com/6a82671c-0f5e-427f-84b4-7c3613ba9ccd.zip [stream]
+[debug] [2026-03-29T11:43:40.916Z] <<< [apiv2][status] PUT https://storage.googleapis.com/gcf-v2-uploads-491399476670.us-central1.cloudfunctions.appspot.com/6a82671c-0f5e-427f-84b4-7c3613ba9ccd.zip 200
+[debug] [2026-03-29T11:43:40.917Z] <<< [apiv2][body] PUT https://storage.googleapis.com/gcf-v2-uploads-491399476670.us-central1.cloudfunctions.appspot.com/6a82671c-0f5e-427f-84b4-7c3613ba9ccd.zip [omitted]
+[info] +  functions: functions source uploaded successfully 
+[info] i  functions: updating Node.js 20 (2nd Gen) function processGemini(us-central1)... 
+[debug] [2026-03-29T11:43:40.939Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:40.939Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:40.940Z] >>> [apiv2][query] PATCH https://cloudfunctions.googleapis.com/v2/projects/cruxai-summarize/locations/us-central1/functions/processGemini updateMask=name%2CbuildConfig.runtime%2CbuildConfig.entryPoint%2CbuildConfig.source.storageSource.bucket%2CbuildConfig.source.storageSource.object%2CbuildConfig.environmentVariables%2CbuildConfig.sourceToken%2CserviceConfig.environmentVariables%2CserviceConfig.secretEnvironmentVariables%2CserviceConfig.ingressSettings%2CserviceConfig.timeoutSeconds%2CserviceConfig.serviceAccountEmail%2CserviceConfig.availableMemory%2CserviceConfig.minInstanceCount%2CserviceConfig.maxInstanceCount%2CserviceConfig.maxInstanceRequestConcurrency%2CserviceConfig.availableCpu%2CserviceConfig.vpcConnector%2CserviceConfig.vpcConnectorEgressSettings%2CserviceConfig.directVpcNetworkInterface%2CserviceConfig.directVpcEgress%2Clabels
+[debug] [2026-03-29T11:43:40.941Z] >>> [apiv2][body] PATCH https://cloudfunctions.googleapis.com/v2/projects/cruxai-summarize/locations/us-central1/functions/processGemini {"name":"projects/cruxai-summarize/locations/us-central1/functions/processGemini","buildConfig":{"runtime":"nodejs20","entryPoint":"processGemini","source":{"storageSource":{"bucket":"gcf-v2-uploads-491399476670.us-central1.cloudfunctions.appspot.com","object":"6a82671c-0f5e-427f-84b4-7c3613ba9ccd.zip"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}},"serviceConfig":{"environmentVariables":{"GEMINI_API_KEY":"AIzaSyB2h9DjmYejKzSk4yVz63vHondMrjTZV7A","FIREBASE_CONFIG":"{\"projectId\":\"cruxai-summarize\",\"storageBucket\":\"cruxai-summarize.firebasestorage.app\"}","GCLOUD_PROJECT":"cruxai-summarize","EVENTARC_CLOUD_EVENT_SOURCE":"projects/cruxai-summarize/locations/us-central1/services/processGemini","FUNCTION_TARGET":"processGemini","LOG_EXECUTION_ID":"true"},"secretEnvironmentVariables":[{"key":"GEMINI_API_KEY","secret":"GEMINI_API_KEY","projectId":"cruxai-summarize","version":"2"}],"ingressSettings":null,"timeoutSeconds":60,"serviceAccountEmail":null,"availableMemory":"512Mi","minInstanceCount":null,"maxInstanceCount":50,"maxInstanceRequestConcurrency":80,"availableCpu":"1","vpcConnector":null,"vpcConnectorEgressSettings":null,"directVpcNetworkInterface":null,"directVpcEgress":null},"labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"6dba6b767953c08e159193a89576099df60bfc3d"}}
+[debug] [2026-03-29T11:43:42.126Z] <<< [apiv2][status] PATCH https://cloudfunctions.googleapis.com/v2/projects/cruxai-summarize/locations/us-central1/functions/processGemini 400
+[debug] [2026-03-29T11:43:42.127Z] <<< [apiv2][body] PATCH https://cloudfunctions.googleapis.com/v2/projects/cruxai-summarize/locations/us-central1/functions/processGemini {"error":{"code":400,"message":"Could not update Cloud Run service projects/cruxai-summarize/locations/us-central1/services/processgemini. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: GEMINI_API_KEY","status":"INVALID_ARGUMENT"}}
+[warn] !  functions: Request to https://cloudfunctions.googleapis.com/v2/projects/cruxai-summarize/locations/us-central1/functions/processGemini?updateMask=name%2CbuildConfig.runtime%2CbuildConfig.entryPoint%2CbuildConfig.source.storageSource.bucket%2CbuildConfig.source.storageSource.object%2CbuildConfig.environmentVariables%2CbuildConfig.sourceToken%2CserviceConfig.environmentVariables%2CserviceConfig.secretEnvironmentVariables%2CserviceConfig.ingressSettings%2CserviceConfig.timeoutSeconds%2CserviceConfig.serviceAccountEmail%2CserviceConfig.availableMemory%2CserviceConfig.minInstanceCount%2CserviceConfig.maxInstanceCount%2CserviceConfig.maxInstanceRequestConcurrency%2CserviceConfig.availableCpu%2CserviceConfig.vpcConnector%2CserviceConfig.vpcConnectorEgressSettings%2CserviceConfig.directVpcNetworkInterface%2CserviceConfig.directVpcEgress%2Clabels had HTTP Error: 400, Could not update Cloud Run service projects/cruxai-summarize/locations/us-central1/services/processgemini. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: GEMINI_API_KEY 
+[warn] !  functions:  failed to update function projects/cruxai-summarize/locations/us-central1/functions/processGemini 
+[error] Failed to update function projects/cruxai-summarize/locations/us-central1/functions/processGemini
+[debug] [2026-03-29T11:43:42.136Z] Total Function Deployment time: 1199
+[debug] [2026-03-29T11:43:42.137Z] 1 Functions Deployed
+[debug] [2026-03-29T11:43:42.137Z] 1 Functions Errored
+[debug] [2026-03-29T11:43:42.137Z] 0 Function Deployments Aborted
+[debug] [2026-03-29T11:43:42.137Z] Average Function Deployment time: 1197
+[info] 
+[info] Functions deploy had errors with the following functions:
+	processGemini(us-central1)
+[debug] [2026-03-29T11:43:42.360Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:42.360Z] Checked if tokens are valid: true, expires at: 1774788009357
+[debug] [2026-03-29T11:43:42.360Z] >>> [apiv2][query] GET https://artifactregistry.googleapis.com/v1/projects/cruxai-summarize/locations/us-central1/repositories/gcf-artifacts [none]
+[debug] [2026-03-29T11:43:43.344Z] <<< [apiv2][status] GET https://artifactregistry.googleapis.com/v1/projects/cruxai-summarize/locations/us-central1/repositories/gcf-artifacts 200
+[debug] [2026-03-29T11:43:43.344Z] <<< [apiv2][body] GET https://artifactregistry.googleapis.com/v1/projects/cruxai-summarize/locations/us-central1/repositories/gcf-artifacts {"name":"projects/cruxai-summarize/locations/us-central1/repositories/gcf-artifacts","format":"DOCKER","description":"This repository is created and used by Cloud Functions for storing function docker images.","labels":{"goog-managed-by":"cloudfunctions"},"createTime":"2026-03-28T16:29:09.302869Z","updateTime":"2026-03-29T01:19:31.681275Z","mode":"STANDARD_REPOSITORY","cleanupPolicies":{"firebase-functions-cleanup":{"id":"firebase-functions-cleanup","action":"DELETE","condition":{"tagState":"ANY","olderThan":"86400s"}}},"sizeBytes":"225132691","vulnerabilityScanningConfig":{"lastEnableTime":"2026-03-28T16:28:59.211953907Z","enablementState":"SCANNING_DISABLED","enablementStateReason":"API containerscanning.googleapis.com is not enabled."},"satisfiesPzi":true,"registryUri":"us-central1-docker.pkg.dev/cruxai-summarize/gcf-artifacts"}
+[debug] [2026-03-29T11:43:43.344Z] Functions deploy failed.
+[debug] [2026-03-29T11:43:43.345Z] {
+  "endpoint": {
+    "id": "processGemini",
+    "project": "cruxai-summarize",
+    "region": "us-central1",
+    "entryPoint": "processGemini",
+    "platform": "gcfv2",
+    "runtime": "nodejs20",
+    "callableTrigger": {},
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "secretEnvironmentVariables": [
+      {
+        "key": "GEMINI_API_KEY",
+        "secret": "GEMINI_API_KEY",
+        "projectId": "cruxai-summarize",
+        "version": "2"
+      }
+    ],
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": 512,
+    "timeoutSeconds": 60,
+    "maxInstances": 50,
+    "minInstances": null,
+    "concurrency": 80,
+    "vpc": null,
+    "environmentVariables": {
+      "GEMINI_API_KEY": "AIzaSyB2h9DjmYejKzSk4yVz63vHondMrjTZV7A",
+      "FIREBASE_CONFIG": "{\"projectId\":\"cruxai-summarize\",\"storageBucket\":\"cruxai-summarize.firebasestorage.app\"}",
+      "GCLOUD_PROJECT": "cruxai-summarize",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/cruxai-summarize/locations/us-central1/services/processGemini"
+    },
+    "codebase": "default",
+    "runServiceId": "processgemini",
+    "cpu": 1,
+    "securityLevel": "SECURE_ALWAYS",
+    "targetedByOnly": false,
+    "hash": "6dba6b767953c08e159193a89576099df60bfc3d"
+  },
+  "op": "update",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/cruxai-summarize/locations/us-central1/functions/processGemini"
+    },
+    "exit": 1,
+    "message": "Failed to update function projects/cruxai-summarize/locations/us-central1/functions/processGemini",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 400,
+            "message": "Could not update Cloud Run service projects/cruxai-summarize/locations/us-central1/services/processgemini. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: GEMINI_API_KEY",
+            "status": "INVALID_ARGUMENT"
+          }
+        },
+        "response": {
+          "statusCode": 400
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v2/projects/cruxai-summarize/locations/us-central1/functions/processGemini?updateMask=name%2CbuildConfig.runtime%2CbuildConfig.entryPoint%2CbuildConfig.source.storageSource.bucket%2CbuildConfig.source.storageSource.object%2CbuildConfig.environmentVariables%2CbuildConfig.sourceToken%2CserviceConfig.environmentVariables%2CserviceConfig.secretEnvironmentVariables%2CserviceConfig.ingressSettings%2CserviceConfig.timeoutSeconds%2CserviceConfig.serviceAccountEmail%2CserviceConfig.availableMemory%2CserviceConfig.minInstanceCount%2CserviceConfig.maxInstanceCount%2CserviceConfig.maxInstanceRequestConcurrency%2CserviceConfig.availableCpu%2CserviceConfig.vpcConnector%2CserviceConfig.vpcConnectorEgressSettings%2CserviceConfig.directVpcNetworkInterface%2CserviceConfig.directVpcEgress%2Clabels had HTTP Error: 400, Could not update Cloud Run service projects/cruxai-summarize/locations/us-central1/services/processgemini. spec.template.spec.containers[0].env: Secret environment variable overlaps non secret environment variable: GEMINI_API_KEY",
+      "status": 400
+    },
+    "status": 400,
+    "code": 400
+  }
+}
+[debug] [2026-03-29T11:43:43.426Z] Error: Failed to update function processGemini in region us-central1
+    at C:\Users\Furka\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\release\fabricator.js:441:19
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Fabricator.updateV2Function (C:\Users\Furka\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\release\fabricator.js:425:32)
+    at async Fabricator.updateEndpoint (C:\Users\Furka\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\release\fabricator.js:161:13)
+    at async handle (C:\Users\Furka\AppData\Roaming\npm\node_modules\firebase-tools\lib\deploy\functions\release\fabricator.js:92:17)
+[error] 
+[error] Error: There was an error deploying functions
