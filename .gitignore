@@ -14,3 +14,7 @@ google-services.json
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firebase Functions
+functions/.env
+functions/node_modules/
