@@ -13,6 +13,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator;
 import androidx.navigation.Navigation;
 
 import com.furkanfidanoglu.cruxaisummarize.R;
@@ -20,10 +21,15 @@ import com.furkanfidanoglu.cruxaisummarize.data.model.FirebaseDB;
 import com.furkanfidanoglu.cruxaisummarize.databinding.FragmentProfileBinding;
 import com.furkanfidanoglu.cruxaisummarize.util.managers.BillingManager;
 import com.furkanfidanoglu.cruxaisummarize.util.managers.FirebaseDBManager;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 public class Profile extends Fragment {
     private FirebaseAuth auth;
@@ -158,12 +164,12 @@ public class Profile extends Fragment {
         // 3. GOOGLE'DAN DA ÇIKIŞ YAP (YENİ EKLENEN KISIM)
         // Bunu eklemezsen Google arkada "ben hala girişliyim" der, hesap seçtirmez.
         try {
-            com.google.android.gms.auth.api.signin.GoogleSignInOptions gso =
-                    new com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(
-                            com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN).build();
+            GoogleSignInOptions gso =
+                    new GoogleSignInOptions.Builder(
+                            GoogleSignInOptions.DEFAULT_SIGN_IN).build();
 
-            com.google.android.gms.auth.api.signin.GoogleSignInClient googleSignInClient =
-                    com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(requireActivity(), gso);
+            GoogleSignInClient googleSignInClient =
+                    GoogleSignIn.getClient(requireActivity(), gso);
 
             googleSignInClient.signOut();
         } catch (Exception e) {
@@ -212,19 +218,10 @@ public class Profile extends Fragment {
                 });
 
                 // C) 🔥 STORAGE SİLME (Yeni Yapı: uploads/userID/)
-                com.google.firebase.storage.StorageReference userFolderRef =
-                        com.google.firebase.storage.FirebaseStorage.getInstance().getReference().child("uploads/" + uid);
+                StorageReference userFolderRef =
+                        FirebaseStorage.getInstance().getReference().child("uploads/" + uid);
 
-                userFolderRef.listAll().addOnSuccessListener(listResult -> {
-                    // 1. Klasördeki tüm dosyaları sil
-                    for (com.google.firebase.storage.StorageReference item : listResult.getItems()) {
-                        item.delete();
-                    }
-
-                }).addOnFailureListener(e -> {
-                    // Klasör boşsa veya yoksa hata verebilir, önemli değil. Akış devam eder.
-                    // Log.e("StorageDelete", "Hata: " + e.getMessage());
-                });
+                deleteFolderRecursively(userFolderRef);
 
                 // D) Kullanıcıya bilgi ver ve ÇIKIŞ yap
                 Toast.makeText(getContext(), getString(R.string.msg_account_deleted), Toast.LENGTH_SHORT).show();
@@ -239,6 +236,23 @@ public class Profile extends Fragment {
             }
         });
     }
+
+    private void deleteFolderRecursively(StorageReference folderRef) {
+        folderRef.listAll().addOnSuccessListener(listResult -> {
+            // 1. Klasördeki tüm dosyaları sil
+            for (StorageReference item : listResult.getItems()) {
+                item.delete();
+            }
+
+            // 2. Alt klasörler için aynı işlemi tekrar et
+            for (StorageReference prefix : listResult.getPrefixes()) {
+                deleteFolderRecursively(prefix);
+            }
+
+        }).addOnFailureListener(e -> {
+        });
+    }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();

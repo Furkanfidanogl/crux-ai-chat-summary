@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
@@ -89,14 +90,11 @@ public class HomeActivity extends BaseActivity {
             // 👇🔥 BURAYI EKLE (GÖRÜNMEZLİK MODU) 👇🔥
             navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
                 if (destination.getId() == R.id.plans) {
-                    // Plans sayfasındaysak BottomBar'ı YOK ET 👻
-                    bottomNav.setVisibility(android.view.View.GONE);
+                    bottomNav.setVisibility(View.GONE);
                 } else {
-                    // Diğer sayfalardaysak GERİ GETİR 👀
-                    bottomNav.setVisibility(android.view.View.VISIBLE);
+                    bottomNav.setVisibility(View.VISIBLE);
                 }
             });
-            // 👆🔥 BİTTİ BU KADAR 👆🔥
         }
 
         BillingManager.getInstance(this).checkSubscriptionStatus();
@@ -160,7 +158,8 @@ public class HomeActivity extends BaseActivity {
 
         if (requestCode == UPDATE_REQUEST_CODE) {
             if (resultCode != RESULT_OK) {
-                checkUpdate();
+                Log.e("UpdateTest", "Kullanıcı güncellemeyi reddetti veya başarısız oldu.");
+                finish(); // Zorunlu güncellemeyi yapmıyorsa uygulamayı kapat
             }
         }
     }

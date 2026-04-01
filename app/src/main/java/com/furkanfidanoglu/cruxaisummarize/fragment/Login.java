@@ -103,17 +103,18 @@ public class Login extends Fragment {
                     boolean isNewUser = authResult.getAdditionalUserInfo().isNewUser();
 
                     if (isNewUser) {
-                        // ADIM 1: Adam yeni kayıt oluşturdu ama burası LOGIN sayfası! Yasak!
-                        // ADIM 2: Hemen oluşturulan o hesabı siliyoruz.
+                        // ADIM 1: Yeni kullanıcı Login sayfasında Google ile giriş yaptı, ama kayıt olmamış.
+                        // ADIM 2: Hesabı silmek yerine, SignUp'a yönlendir.
                         auth.getCurrentUser().delete().addOnCompleteListener(task -> {
-
                             // ADIM 3: Google ve Firebase'den çıkış yapıp temizliyoruz
                             FirebaseAuth.getInstance().signOut();
                             mGoogleSignInClient.signOut();
 
                             setLoadingState(false);
-                            // Kullanıcıya fırçayı atıyoruz
-                            Toast.makeText(requireContext(), R.string.error_login_failed, Toast.LENGTH_LONG).show();
+                            // Kullanıcıya kayıt olmasını söyle
+                            Toast.makeText(requireContext(), getString(R.string.error_login_new_user), Toast.LENGTH_LONG).show();
+                            // SignUp'a yönlendir
+                            Navigation.findNavController(requireView()).navigate(R.id.action_login_to_signUp);
                         });
                     } else {
                         changeScreen();

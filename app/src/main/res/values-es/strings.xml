@@ -202,6 +202,7 @@
     <string name="error_invalid_website_with_mail">Por favor, introduzca una dirección de sitio web válida (no se puede realizar el análisis de correos electrónicos).</string>
     <string name="error_invalid_website">Por favor, introduzca una dirección de sitio web válida.</string>
     <string name="error_login_failed">Error de inicio de sesión. Verifique su correo y contraseña.</string>
+    <string name="error_login_new_user">Los nuevos usuarios deben registrarse primero. Redirigiendo a Registrarse...</string>
     <string name="error_reset_failed">No se pudo enviar el correo. Verifique la dirección.</string>
     <string name="error_signup_failed">Registro fallido. El correo podría estar en uso.</string>
     <string name="google_error">Error de Google</string>

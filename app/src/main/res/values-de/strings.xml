@@ -202,6 +202,7 @@
     <string name="error_invalid_website_with_mail">Bitte geben Sie eine gültige Website-Adresse ein (E-Mail-Analyse ist nicht möglich).</string>
     <string name="error_invalid_website">Bitte geben Sie eine gültige Website-Adresse ein.</string>
     <string name="error_login_failed">Anmeldung fehlgeschlagen. Bitte prüfen Sie E-Mail und Passwort.</string>
+    <string name="error_login_new_user">Neue Benutzer müssen sich zuerst anmelden. Weiterleitung zur Anmeldung...</string>
     <string name="error_reset_failed">E-Mail konnte nicht gesendet werden. Bitte Adresse prüfen.</string>
     <string name="error_signup_failed">Registrierung fehlgeschlagen. E-Mail wird möglicherweise bereits verwendet.</string>
     <string name="google_error">Google-Fehler</string>

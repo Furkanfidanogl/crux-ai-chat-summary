@@ -11,11 +11,9 @@ import android.text.InputFilter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -132,7 +130,6 @@ public class TextDoc extends Fragment {
         // 🔥 HAYAT KURTARAN HAMLE: Fragment açıldığında yükleniyor modunu sıfırla.
         // Böylece kullanıcı geri döndüğünde butonlar kilitli kalmaz.
         setLoadingState(false);
-
         setupRecyclerView();
         setupSessionManagement(getArguments());
         setupPermissions();
@@ -141,7 +138,7 @@ public class TextDoc extends Fragment {
     }
 
     private void setupBackPressHandler() {
-        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new androidx.activity.OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 if (binding != null && binding.layoutAttachments.getVisibility() == View.VISIBLE) {
@@ -149,7 +146,7 @@ public class TextDoc extends Fragment {
                 } else if (adapter.getItemCount() > 0) {
                     startNewChatInternal();
                 } else {
-                    setEnabled(false);
+                    setEnabled(false); // Sisteme devret
                     requireActivity().getOnBackPressedDispatcher().onBackPressed();
                 }
             }
@@ -905,15 +902,14 @@ public class TextDoc extends Fragment {
         if (binding == null) return;
         hideKeyboard();
         binding.layoutAttachments.setVisibility(View.VISIBLE);
-        binding.layoutAttachments.setTranslationY(1000f);
-        binding.layoutAttachments.animate().translationY(0).setDuration(300).setInterpolator(new AccelerateDecelerateInterpolator()).start();
     }
 
     private void hideAttachmentMenu() {
         if (binding == null || binding.layoutAttachments.getVisibility() != View.VISIBLE) return;
-        binding.layoutAttachments.animate().translationY(1000f).setDuration(300).withEndAction(() -> {
-            if (binding != null) binding.layoutAttachments.setVisibility(View.GONE);
-        }).start();
+
+        binding.layoutAttachments.setVisibility(View.GONE);
+
+        binding.btnAttach.setRotation(0f);
     }
 
     private void hideKeyboard() {

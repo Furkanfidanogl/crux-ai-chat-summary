@@ -202,6 +202,7 @@
     <string name="error_invalid_website_with_mail">Veuillez entrer une adresse de site web valide (l’analyse des e-mails n’est pas possible).</string>
     <string name="error_invalid_website">Veuillez entrer une adresse de site web valide.</string>
     <string name="error_login_failed">Échec de la connexion. Vérifiez votre e-mail et mot de passe.</string>
+    <string name="error_login_new_user">Les nouveaux utilisateurs doivent s\'inscrire d\'abord. Redirection vers S\'inscrire...</string>
     <string name="error_reset_failed">Échec de l`envoi de l`e-mail. Vérifiez l`adresse.</string>
     <string name="error_signup_failed">Échec de l\'inscription. L\'e-mail est peut-être déjà utilisé.</string>
     <string name="google_error">Erreur Google</string>

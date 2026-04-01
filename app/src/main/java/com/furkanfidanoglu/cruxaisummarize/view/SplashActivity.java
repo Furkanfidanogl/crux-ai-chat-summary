@@ -14,7 +14,7 @@ import com.furkanfidanoglu.cruxaisummarize.R;
 import com.furkanfidanoglu.cruxaisummarize.util.helpers.BaseActivity;
 import com.google.firebase.auth.FirebaseAuth;
 
-public class SplashActivity extends BaseActivity {  // 👈 sadece BaseActivity
+public class SplashActivity extends BaseActivity {
     private FirebaseAuth auth;
     Intent intent;
 
@@ -23,19 +23,6 @@ public class SplashActivity extends BaseActivity {  // 👈 sadece BaseActivity
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_splash);
-
-        com.google.firebase.FirebaseApp.initializeApp(this);
-        com.google.firebase.appcheck.FirebaseAppCheck firebaseAppCheck = com.google.firebase.appcheck.FirebaseAppCheck.getInstance();
-
-        if (com.furkanfidanoglu.cruxaisummarize.BuildConfig.DEBUG) {
-            firebaseAppCheck.installAppCheckProviderFactory(
-                    com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory.getInstance()
-            );
-        } else {
-            firebaseAppCheck.installAppCheckProviderFactory(
-                    com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory.getInstance()
-            );
-        }
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());

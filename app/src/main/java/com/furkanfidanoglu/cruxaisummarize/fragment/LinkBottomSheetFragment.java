@@ -51,7 +51,6 @@ public class LinkBottomSheetFragment extends BottomSheetDialogFragment {
             }
 
             // 🔥 2. MAIL ENGELİ (YENİ EKLENDİ)
-            // Burası link analiz yeri, adam mail adresi yazarsa scraper patlar.
             // O yüzden içinde '@' varsa veya 'mailto:' ile başlıyorsa kibarca reddediyoruz.
             if (rawLink.contains("@") || rawLink.startsWith("mailto:")) {
                 Toast.makeText(requireContext(), getString(R.string.error_invalid_website_with_mail), Toast.LENGTH_SHORT).show();

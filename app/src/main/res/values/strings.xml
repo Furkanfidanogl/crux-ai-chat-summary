@@ -201,6 +201,7 @@
     <string name="error_invalid_website_with_mail">Please enter a valid website address (email analysis is not available).</string>
     <string name="error_invalid_website">Please enter a valid website address.</string>
     <string name="error_login_failed">Login failed. Please check your email and password.</string>
+    <string name="error_login_new_user">New users must sign up first. Redirecting to Sign Up...</string>
     <string name="error_reset_failed">Failed to send email. Please check the address.</string>
     <string name="error_signup_failed">Registration failed. Email might be in use.</string>
     <string name="google_error">Google Error</string>

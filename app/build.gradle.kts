@@ -15,7 +15,7 @@ android {
         applicationId = "com.furkanfidanoglu.cruxaisummarize"
         minSdk = 26
         targetSdk = 36
-        versionCode = 79
+        versionCode = 84
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -84,4 +84,5 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:21.0.0") // Gmail Authentication
     implementation("com.google.android.play:app-update:2.1.0")
     implementation("com.android.billingclient:billing:7.1.1")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }

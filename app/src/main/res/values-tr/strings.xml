@@ -200,6 +200,7 @@
     <string name="error_invalid_website_with_mail">Lütfen geçerli bir web sitesi adresi girin (Mail analizi yapılamaz).</string>
     <string name="error_invalid_website">Lütfen geçerli bir web sitesi adresi girin.</string>
     <string name="error_login_failed">Giriş başarısız. Lütfen e-posta ve şifrenizi kontrol edin.</string>
+    <string name="error_login_new_user">Yeni kullanıcılar önce kayıt olmalı. Kayıt Ol sayfasına yönlendiriliyor...</string>
     <string name="error_reset_failed">E-posta gönderilemedi. Lütfen adresi kontrol edin.</string>
     <string name="error_signup_failed">Kayıt yapılamadı. Bu e-posta kullanılıyor olabilir.</string>
     <string name="google_error">Google Hatası</string>
