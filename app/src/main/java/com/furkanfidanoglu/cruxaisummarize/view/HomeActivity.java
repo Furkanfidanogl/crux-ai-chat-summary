@@ -17,6 +17,7 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
 import com.furkanfidanoglu.cruxaisummarize.R;
+import com.furkanfidanoglu.cruxaisummarize.animation.NavigationAnimHelper;
 import com.furkanfidanoglu.cruxaisummarize.util.helpers.BaseActivity;
 import com.furkanfidanoglu.cruxaisummarize.util.managers.FirebaseDBManager;
 import com.furkanfidanoglu.cruxaisummarize.util.managers.BillingManager;
@@ -85,16 +86,7 @@ public class HomeActivity extends BaseActivity {
 
         if (navHostFragment != null) {
             NavController navController = navHostFragment.getNavController();
-            NavigationUI.setupWithNavController(bottomNav, navController);
-
-            // 👇🔥 BURAYI EKLE (GÖRÜNMEZLİK MODU) 👇🔥
-            navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
-                if (destination.getId() == R.id.plans) {
-                    bottomNav.setVisibility(View.GONE);
-                } else {
-                    bottomNav.setVisibility(View.VISIBLE);
-                }
-            });
+            NavigationAnimHelper.setupWithAnimations(bottomNav, navController);
         }
 
         BillingManager.getInstance(this).checkSubscriptionStatus();

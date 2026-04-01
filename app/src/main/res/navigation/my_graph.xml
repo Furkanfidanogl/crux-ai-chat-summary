@@ -26,7 +26,9 @@
         tools:layout="@layout/fragment_profile" >
         <action
             android:id="@+id/action_profile_to_plans"
-            app:destination="@id/plans" />
+            app:destination="@id/plans"
+            app:enterAnim="@anim/premium_enter"
+            app:popExitAnim="@anim/premium_exit" />
     </fragment>
     <fragment
         android:id="@+id/plans"
