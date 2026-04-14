@@ -1,6 +1,6 @@
-# Craxx AI
+# Crux AI
 
-Craxx AI is a modern Android application that allows users to interact with a powerful AI assistant and generate summaries from multiple types of content including text, images, PDFs, and audio.  
+Crux AI is a modern Android application that allows users to interact with a powerful AI assistant and generate summaries from multiple types of content including text, images, PDFs, and audio.  
 
 It demonstrates a versatile AI-powered mobile experience with real-time processing and user-friendly interface.
 
@@ -41,7 +41,7 @@ The purpose of this project is to develop a real-world Android application power
 
 # 🇹🇷 Türkçe
 
-Craxx AI, kullanıcıların güçlü bir AI asistanı ile etkileşim kurabildiği ve metin, görsel, PDF ve ses dosyalarından özetler oluşturabildiği modern bir Android uygulamasıdır.  
+Crux AI, kullanıcıların güçlü bir AI asistanı ile etkileşim kurabildiği ve metin, görsel, PDF ve ses dosyalarından özetler oluşturabildiği modern bir Android uygulamasıdır.  
 
 Kullanıcı dostu arayüzü ve gerçek zamanlı işlem yetenekleri ile kapsamlı bir AI deneyimi sunar.
 
