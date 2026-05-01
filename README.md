@@ -36,3 +36,11 @@ This application is actively maintained and available globally on the Google Pla
 🔗 **[Experience Crux AI on Google Play](https://play.google.com/store/apps/details?id=com.furkanfidanoglu.cruxaisummarize)**
 
 *(Note: As this is a live production application with a secured backend infrastructure, the source code provided serves as an architectural showcase. Local execution is restricted to protect API and database credentials.)*
+
+
+<img width="1547" height="3272" alt="Screenshot_20260207_155632" src="https://github.com/user-attachments/assets/cc124ce4-95c3-4b04-8c00-b4819c10936d" />
+<img width="1547" height="3272" alt="Screenshot_20260207_160104" src="https://github.com/user-attachments/assets/2944743a-8269-4270-b354-34b9496716e9" />
+<img width="1547" height="3272" alt="Screenshot_20260207_160055" src="https://github.com/user-attachments/assets/bf13cf2d-a53e-434c-912f-b709f4402225" />
+<img width="1547" height="3272" alt="Screenshot_20260207_160042" src="https://github.com/user-attachments/assets/35f96e63-2bdf-4718-84a0-9a345857ff21" />
+<img width="1547" height="3272" alt="Screenshot_20260207_155737" src="https://github.com/user-attachments/assets/4616c785-d39a-4b00-a0ce-deac441a6a75" />
+<img width="1547" height="3272" alt="Screenshot_20260207_155707" src="https://github.com/user-attachments/assets/5ecebf46-2a5b-4ae8-83ed-f54af29b1eff" />
