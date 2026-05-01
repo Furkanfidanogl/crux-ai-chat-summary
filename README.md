@@ -1,72 +1,38 @@
-# Crux AI
+# 🤖 Crux AI - Multimodal AI Assistant & Summarizer
 
-Crux AI is a modern Android application that allows users to interact with a powerful AI assistant and generate summaries from multiple types of content including text, images, PDFs, and audio.  
+[![Get it on Google Play]](https://play.google.com/store/apps/details?id=com.furkanfidanoglu.cruxaisummarize)
 
-It demonstrates a versatile AI-powered mobile experience with real-time processing and user-friendly interface.
-
----
-
-## 🚀 Features
-
-- AI Chat Interface
-- Upload and summarize Images, PDFs, and Audio
-- Firebase Authentication & User Management
-- Personalized AI responses
-- Clean and modern Android UI
+> A production-ready, multimodal Android AI assistant currently live on the Google Play Store. Crux AI empowers users to interact with advanced Gen AI to seamlessly summarize text, extract data from images, parse PDFs, and transcribe audio, all wrapped in a highly optimized native architecture.
 
 ---
 
-## 🛠️ Technologies Used
+## 🎯 Advanced Features & Architecture
 
-- Kotlin / Java
-- Android Studio
-- Firebase Authentication & Firestore
-- Material Design Components
-- Gen AI integration
-
----
-
-## 📱 Google Play
-
-The application is available on Google Play:  
-https://play.google.com/store/apps/details?id=com.furkanfidanoglu.cruxaisummarize
+*   🧠 **Multimodal Processing Engine:** Deep integration with Gen AI to process and synthesize varied data formats (`TEXT`, `IMAGE`, `AUDIO`, `DOC`) in real-time.
+*   🏗️ **Scalable UI Architecture:** Developed a highly decoupled `HistoryAdapter` utilizing interface-based click listener patterns. This ensures elegant, reusable code while flawlessly managing complex multi-view types in the `RecyclerView`.
+*   🛡️ **Production-Grade Security:** Firebase Realtime Database and Cloud Storage are secured with strictly enforced security rules, ensuring absolute data integrity and user privacy in a live production environment.
+*   📊 **Analytics & Monitoring:** Firebase infrastructure is fully linked with the Google Play Console for real-time monitoring, crash reporting, and user analytics.
+*   👤 **Comprehensive User Management:** Secure Firebase Authentication flow supporting seamless login/logout, password management, and permanent account deletion compliant with modern data standards.
+*   ✨ **Polished Native Experience:** Clean, responsive, and intuitive interface leveraging the latest Material Design Components.
 
 ---
 
-## 📌 Project Purpose
+## 🛠️ Technology Stack
 
-The purpose of this project is to develop a real-world Android application powered by AI, providing hands-on experience with cloud services, real-time data processing, and advanced mobile UI/UX.
-
----
-
-# 🇹🇷 Türkçe
-
-Crux AI, kullanıcıların güçlü bir AI asistanı ile etkileşim kurabildiği ve metin, görsel, PDF ve ses dosyalarından özetler oluşturabildiği modern bir Android uygulamasıdır.  
-
-Kullanıcı dostu arayüzü ve gerçek zamanlı işlem yetenekleri ile kapsamlı bir AI deneyimi sunar.
+| Technology | Role | Description |
+| :--- | :--- | :--- |
+| ☕ **Java** | Core Language | Robust application logic and elegant architectural drafts. |
+| 🤖 **Gen AI** | Artificial Intelligence | Powers the core conversational and multimodal summarization engine. |
+| 🔥 **Firebase Suite** | Backend | Handles Auth, Firestore, and Storage with strictly enforced rules. |
+| 📈 **Play Console** | Distribution & Analytics| Live app management linked seamlessly with Firebase metrics. |
+| 🎨 **Material Design** | UI/UX | Standardized, high-quality Android UI implementation. |
 
 ---
 
-## 🚀 Özellikler
+## 📱 Live on Google Play
 
-- AI sohbet arayüzü
-- Görsel, PDF ve ses dosyalarını yükleme ve özetleme
-- Firebase kullanıcı girişi ve hesap yönetimi
-- Kişiselleştirilmiş AI yanıtlar
-- Modern ve temiz Android arayüzü
+This application is actively maintained and available globally on the Google Play Store. 
 
----
+🔗 **[Experience Crux AI on Google Play](https://play.google.com/store/apps/details?id=com.furkanfidanoglu.cruxaisummarize)**
 
-## 🛠️ Kullanılan Teknolojiler
-
-- Java
-- Android Studio
-- Firebase Authentication & Firestore
-- Material Design bileşenleri
-- Gen AI entegrasyonu
-
----
-
-## 📌 Projenin Amacı
-
-Bu proje, yapay zeka destekli gerçek bir Android uygulaması geliştirmek, bulut servisleriyle çalışmak, gerçek zamanlı veri işleme yapmak ve modern mobil UI/UX deneyimi kazanmak amacıyla oluşturulmuştur.
+*(Note: As this is a live production application with a secured backend infrastructure, the source code provided serves as an architectural showcase. Local execution is restricted to protect API and database credentials.)*
