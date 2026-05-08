@@ -20,7 +20,6 @@ public class MessageModel {
     // Dosya İsmi
     private String fileName;
 
-    // Anlık Veriler (Firestore'a KAYDEDİLMEZ - Sadece UI ve Upload için)
     @Exclude
     private byte[] image;
 

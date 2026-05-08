@@ -31,6 +31,7 @@ import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
 import com.google.android.play.core.install.model.AppUpdateType;
 import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class HomeActivity extends BaseActivity {
 
@@ -97,15 +98,7 @@ public class HomeActivity extends BaseActivity {
         Task<AppUpdateInfo> appUpdateInfoTask = appUpdateManager.getAppUpdateInfo();
 
         appUpdateInfoTask.addOnSuccessListener(appUpdateInfo -> {
-            // LOGLARI BURADAN TAKİP ET
-            Log.d("UpdateTest", "Mevcut Durum: " + appUpdateInfo.updateAvailability());
-            Log.d("UpdateTest", "Mevcut Versiyon: " + appUpdateInfo.availableVersionCode());
-            Log.d("UpdateTest", "Update Available Kodu Kaç?: " + UpdateAvailability.UPDATE_AVAILABLE);
-
-            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
-                    && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
-
-                Log.d("UpdateTest", "Güncelleme bulundu, ekran açılıyor...");
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
                 try {
                     appUpdateManager.startUpdateFlowForResult(
                             appUpdateInfo,
@@ -113,7 +106,6 @@ public class HomeActivity extends BaseActivity {
                             this,
                             UPDATE_REQUEST_CODE);
                 } catch (IntentSender.SendIntentException e) {
-                    Log.e("UpdateTest", "Hata oluştu: " + e.getMessage());
                     e.printStackTrace();
                 }
             } else {

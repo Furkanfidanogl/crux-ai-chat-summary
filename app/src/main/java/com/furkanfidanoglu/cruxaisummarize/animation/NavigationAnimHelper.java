@@ -32,7 +32,6 @@ public class NavigationAnimHelper {
                     .setRestoreState(true)
                     .setPopUpTo(navController.getGraph().getStartDestinationId(), false, true);
 
-            // Akıcı ve doğru yönlü animasyon mantığı
             if (newIndex > currentTabIndex) {
                 // Sağa gidiş → yeni ekran sağdan gelir
                 navBuilder.setEnterAnim(R.anim.slide_in_right)

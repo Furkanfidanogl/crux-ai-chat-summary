@@ -587,8 +587,6 @@ public class TextDoc extends Fragment {
         String lower = text.toLowerCase();
 
         // 🛡️ 1. MAIL KORUMASI (ÖNEMLİ)
-        // Eğer içinde '@' varsa bu muhtemelen bir mail adresidir.
-        // Mail adreslerini link modülüne zorlamamalıyız.
         if (lower.contains("@")) return false;
 
         // 🚨 2. KESİN LİNK BELİRTİLERİ

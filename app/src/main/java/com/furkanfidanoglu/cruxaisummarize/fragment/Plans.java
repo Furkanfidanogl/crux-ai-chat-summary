@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 
 import com.furkanfidanoglu.cruxaisummarize.R;
 import com.furkanfidanoglu.cruxaisummarize.databinding.FragmentPlansBinding;
@@ -82,6 +83,10 @@ public class Plans extends Fragment {
                     });
                 }
             }
+        });
+
+        binding.btnClose.setOnClickListener(v -> {
+            requireActivity().onBackPressed();
         });
 
         binding.btnUpgrade.setOnClickListener(v -> {
