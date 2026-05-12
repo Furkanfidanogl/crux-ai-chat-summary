@@ -7,7 +7,7 @@ admin.initializeApp();
 
 // ─── CONFIG ──────────────────────────────────────────────────────
 const geminiApiKey = defineSecret("GEMINI_SECRET_KEY");
-const MODEL_NAME = "gemini-3.1-flash-lite-preview";
+const MODEL_NAME = "gemini-3.1-flash-lite";
 const MAX_OUTPUT_TOKENS = 8192;
 const TEMPERATURE = 0.7;
 const TOP_P = 0.9;

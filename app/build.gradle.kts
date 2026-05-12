@@ -15,7 +15,7 @@ android {
         applicationId = "com.furkanfidanoglu.cruxaisummarize"
         minSdk = 26
         targetSdk = 36
-        versionCode = 92
+        versionCode = 96
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

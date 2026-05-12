@@ -185,8 +185,16 @@ public class Profile extends Fragment {
     public void btnChangePassword(View view) {
         if (auth.getCurrentUser() != null) {
             auth.sendPasswordResetEmail(auth.getCurrentUser().getEmail())
-                    .addOnSuccessListener(u -> Toast.makeText(getContext(), getString(R.string.msg_reset_email_sent), Toast.LENGTH_LONG).show())
-                    .addOnFailureListener(e -> Toast.makeText(getContext(), e.getLocalizedMessage(), Toast.LENGTH_LONG).show());
+                    .addOnSuccessListener(u -> {
+                        if (isAdded() && getContext() != null) {
+                            Toast.makeText(getContext(), getString(R.string.msg_reset_email_sent), Toast.LENGTH_LONG).show();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        if (isAdded() && getContext() != null) {
+                            Toast.makeText(getContext(), e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    });
         }
     }
 
