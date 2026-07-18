@@ -61,15 +61,21 @@ public class DocPermission {
                             return; // 🛑 Büyükse iptal et
                         }
 
-                        // B. RAM'E ALMA
-                        byte[] docBytes = getBytesFromUri(uri);
-                        String fileName = getFileName(uri);
+                        // B. RAM'E ALMA (BACKGROUND THREAD)
+                        new Thread(() -> {
+                            byte[] docBytes = getBytesFromUri(uri);
+                            String fileName = getFileName(uri);
 
-                        if (docBytes != null) {
-                            callback.onDocSelected(docBytes, fileName);
-                        } else {
-                            Toast.makeText(fragment.getContext(), fragment.getString(R.string.error_read_doc), Toast.LENGTH_SHORT).show();
-                        }
+                            if (fragment.isAdded()) {
+                                fragment.requireActivity().runOnUiThread(() -> {
+                                    if (docBytes != null) {
+                                        callback.onDocSelected(docBytes, fileName);
+                                    } else {
+                                        Toast.makeText(fragment.getContext(), fragment.getString(R.string.error_read_doc), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        }).start();
                     }
                 }
         );

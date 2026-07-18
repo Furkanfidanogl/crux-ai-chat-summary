@@ -8,8 +8,8 @@ admin.initializeApp();
 // ─── CONFIG ──────────────────────────────────────────────────────
 const geminiApiKey = defineSecret("GEMINI_SECRET_KEY");
 const MODEL_NAME = "gemini-3.1-flash-lite";
-const MAX_OUTPUT_TOKENS = 8192;
-const TEMPERATURE = 0.7;
+const MAX_OUTPUT_TOKENS = 4096;
+const TEMPERATURE = 0.4;
 const TOP_P = 0.9;
 const DEFAULT_SYSTEM_PROMPT = "You are CruxAI. Help the user safely.";
 
@@ -120,19 +120,14 @@ exports.processGemini = onCall(
       throw new HttpsError("unauthenticated", "Authentication required.");
     }
 
-    const { text, mediaBase64, mediaType, mimeType, history } = request.data;
+    const { text, mediaBase64, mediaUrl, mediaType, mimeType, history } = request.data;
 
     // ── Validation ──
     const hasText = text && text.trim().length > 0;
-    const hasMedia = mediaBase64 && mediaType;
+    const hasMedia = (mediaBase64 || mediaUrl) && mediaType;
 
     if (!hasText && !hasMedia) {
       throw new HttpsError("invalid-argument", "No content provided.");
-    }
-
-    // ── Payload size guard (10MB base64 ≈ 7.5MB binary) ──
-    if (mediaBase64 && mediaBase64.length > 14_000_000) {
-      throw new HttpsError("invalid-argument", "Media payload too large (max ~10MB).");
     }
 
     try {
@@ -143,10 +138,62 @@ exports.processGemini = onCall(
         throw new HttpsError("internal", "Server configuration error.");
       }
 
+      let finalMediaBase64 = mediaBase64;
+      let resolvedMimeType = mimeType;
+
+      if (mediaUrl && mediaType) {
+        try {
+          if (mediaUrl.includes("/o/")) {
+            const pathEncoded = mediaUrl.split("/o/")[1].split("?")[0];
+            const path = decodeURIComponent(pathEncoded);
+            console.log(`Downloading from storage path: ${path}`);
+            let bucket;
+            if (mediaUrl.includes("/v0/b/")) {
+              const bucketName = mediaUrl.split("/v0/b/")[1].split("/o/")[0];
+              bucket = admin.storage().bucket(bucketName);
+            } else {
+              bucket = admin.storage().bucket();
+            }
+            const [fileBuffer] = await bucket.file(path).download();
+            finalMediaBase64 = fileBuffer.toString("base64");
+
+            if (!resolvedMimeType) {
+              if (path.endsWith(".jpg") || path.endsWith(".jpeg")) resolvedMimeType = "image/jpeg";
+              else if (path.endsWith(".png")) resolvedMimeType = "image/png";
+              else if (path.endsWith(".gif")) resolvedMimeType = "image/gif";
+              else if (path.endsWith(".webp")) resolvedMimeType = "image/webp";
+              else if (path.endsWith(".pdf")) resolvedMimeType = "application/pdf";
+              else if (path.endsWith(".mp3")) resolvedMimeType = "audio/mp3";
+              else if (path.endsWith(".wav")) resolvedMimeType = "audio/wav";
+              else if (path.endsWith(".m4a")) resolvedMimeType = "audio/m4a";
+              else if (path.endsWith(".txt")) resolvedMimeType = "text/plain";
+              else resolvedMimeType = "application/octet-stream";
+            }
+          } else {
+            console.log(`Downloading from external URL: ${mediaUrl}`);
+            const res = await fetch(mediaUrl);
+            if (!res.ok) throw new Error(`Fetch failed with status ${res.status}`);
+            const arrayBuffer = await res.arrayBuffer();
+            finalMediaBase64 = Buffer.from(arrayBuffer).toString("base64");
+            if (!resolvedMimeType) {
+              resolvedMimeType = res.headers.get("content-type") || "application/octet-stream";
+            }
+          }
+        } catch (err) {
+          console.error("Error downloading media resource:", err);
+          throw new HttpsError("internal", `Failed to retrieve media file: ${err.message}`);
+        }
+      }
+
+      // ── Payload size guard (10MB base64 ≈ 7.5MB binary) ──
+      if (finalMediaBase64 && finalMediaBase64.length > 14_000_000) {
+        throw new HttpsError("invalid-argument", "Media payload too large (max ~10MB).");
+      }
+
       const ai = new GoogleGenAI({ apiKey });
 
       const systemPrompt = await getSystemPrompt();
-      const contents = buildContents(text, mediaBase64, mediaType, mimeType, history);
+      const contents = buildContents(text, finalMediaBase64, mediaType, resolvedMimeType, history);
 
       if (contents.length === 0) {
         throw new HttpsError("invalid-argument", "Empty content after processing.");

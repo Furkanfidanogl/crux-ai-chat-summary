@@ -100,16 +100,28 @@ public class GalleryPermission {
     }
 
     private void processImage(Uri uri) {
-        try {
-            byte[] imageBytes = getBytesFromUri(uri, fragment.requireContext());
-            if (imageBytes != null && callback != null) {
-                callback.onImageSelected(imageBytes, uri);
+        new Thread(() -> {
+            try {
+                Context context = fragment.getContext();
+                if (context == null) return;
+                byte[] imageBytes = getBytesFromUri(uri, context);
+                if (fragment.isAdded()) {
+                    fragment.requireActivity().runOnUiThread(() -> {
+                        if (imageBytes != null && callback != null) {
+                            callback.onImageSelected(imageBytes, uri);
+                        }
+                    });
+                }
+            } catch (IOException e) {
+                if (fragment.isAdded()) {
+                    fragment.requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(fragment.getContext(),
+                                fragment.getString(R.string.error_prefix) + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
             }
-        } catch (IOException e) {
-            Toast.makeText(fragment.getContext(),
-                    fragment.getString(R.string.error_prefix) + e.getMessage(),
-                    Toast.LENGTH_SHORT).show();
-        }
+        }).start();
     }
 
     private byte[] getBytesFromUri(Uri uri, Context context) throws IOException {
@@ -127,7 +139,9 @@ public class GalleryPermission {
                 totalBytesRead += nRead;
 
                 if (totalBytesRead > MAX_FILE_SIZE) {
-                    Toast.makeText(context, context.getString(R.string.msg_image_large), Toast.LENGTH_SHORT).show();
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        Toast.makeText(context, context.getString(R.string.msg_image_large), Toast.LENGTH_SHORT).show();
+                    });
                     return null; // Null dönerek işlemi iptal et
                 }
 

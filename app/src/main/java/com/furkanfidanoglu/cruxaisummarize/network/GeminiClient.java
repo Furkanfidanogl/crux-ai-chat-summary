@@ -86,6 +86,22 @@ public final class GeminiClient {
     // ─── SEND MESSAGE ───────────────────────────────────────────
     public void sendMessage(
             String userText,
+            String mediaUrl,
+            String mediaType,
+            GeminiCallback callback) {
+        if (activeRequests.get() >= MAX_CONCURRENT_REQUESTS) {
+            callback.onError(new GeminiException(
+                    GeminiErrorType.OVERLOADED,
+                    context.getString(R.string.system_busy)));
+            return;
+        }
+
+        activeRequests.incrementAndGet();
+        sendWithRetry(userText, null, mediaUrl, mediaType, callback, 0, System.currentTimeMillis());
+    }
+
+    public void sendMessage(
+            String userText,
             byte[] mediaBytes,
             String mediaType,
             GeminiCallback callback) {
@@ -97,12 +113,13 @@ public final class GeminiClient {
         }
 
         activeRequests.incrementAndGet();
-        sendWithRetry(userText, mediaBytes, mediaType, callback, 0, System.currentTimeMillis());
+        sendWithRetry(userText, mediaBytes, null, mediaType, callback, 0, System.currentTimeMillis());
     }
 
     private void sendWithRetry(
             String userText,
             byte[] mediaBytes,
+            String mediaUrl,
             String mediaType,
             GeminiCallback callback,
             int retryCount,
@@ -123,7 +140,10 @@ public final class GeminiClient {
             payload.put("text", userText);
         }
 
-        if (mediaBytes != null && mediaType != null) {
+        if (mediaUrl != null && mediaType != null) {
+            payload.put("mediaUrl", mediaUrl);
+            payload.put("mediaType", mediaType);
+        } else if (mediaBytes != null && mediaType != null) {
             try {
                 String base64 = Base64.encodeToString(mediaBytes, Base64.NO_WRAP);
                 payload.put("mediaBase64", base64);
@@ -187,10 +207,10 @@ public final class GeminiClient {
 
                             callback.onSuccess(response);
                         } else if (retryCount < MAX_RETRIES) {
-                            scheduleRetry(userText, mediaBytes, mediaType, callback, retryCount + 1, startTime);
+                            scheduleRetry(userText, mediaBytes, mediaUrl, mediaType, callback, retryCount + 1, startTime);
                         } else {
                             callback.onError(new GeminiException(
-                                    GeminiErrorType.EMPTY_RESPONSE,
+                                     GeminiErrorType.EMPTY_RESPONSE,
                                     context.getString(R.string.error_empty)));
                         }
                     } catch (Exception e) {
@@ -204,7 +224,7 @@ public final class GeminiClient {
                     activeRequests.decrementAndGet();
 
                     if (shouldRetry(e) && retryCount < MAX_RETRIES) {
-                        scheduleRetry(userText, mediaBytes, mediaType, callback, retryCount + 1, startTime);
+                        scheduleRetry(userText, mediaBytes, mediaUrl, mediaType, callback, retryCount + 1, startTime);
                     } else {
                         callback.onError(mapToFriendlyException(e));
                     }
@@ -240,6 +260,7 @@ public final class GeminiClient {
     private void scheduleRetry(
             String userText,
             byte[] mediaBytes,
+            String mediaUrl,
             String mediaType,
             GeminiCallback callback,
             int nextRetry,
@@ -250,7 +271,7 @@ public final class GeminiClient {
         executor.execute(() -> {
             try {
                 Thread.sleep(delay);
-                sendWithRetry(userText, mediaBytes, mediaType, callback, nextRetry, startTime);
+                sendWithRetry(userText, mediaBytes, mediaUrl, mediaType, callback, nextRetry, startTime);
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
                 callback.onError(new GeminiException(

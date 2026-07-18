@@ -86,29 +86,52 @@ public class TextDoc extends Fragment {
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
                 if (result.getResultCode() == RESULT_OK) {
-                    try {
-                        if (currentPhotoUri != null && isAdded()) {
-                            InputStream inputStream = requireActivity().getContentResolver().openInputStream(currentPhotoUri);
-                            ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-                            int bufferSize = 1024;
-                            byte[] buffer = new byte[bufferSize];
-                            int len;
-                            while ((len = inputStream.read(buffer)) != -1) {
-                                byteBuffer.write(buffer, 0, len);
-                            }
-                            byte[] fullBytes = byteBuffer.toByteArray();
-
-                            resetMediaSelections();
-                            selectedImageBytes = ImageUtil.processImage(fullBytes);
-
-                            if (binding != null) {
-                                binding.etMessage.setHint(getString(R.string.msg_photo_captured));
-                            }
-                            Toast.makeText(getContext(), getString(R.string.msg_photo_ready), Toast.LENGTH_SHORT).show();
+                    Uri photoUri = currentPhotoUri;
+                    if (photoUri == null && getContext() != null) {
+                        String uriStr = getContext().getSharedPreferences("CameraPrefs", Context.MODE_PRIVATE)
+                                .getString("currentPhotoUri", null);
+                        if (uriStr != null) {
+                            photoUri = Uri.parse(uriStr);
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Toast.makeText(getContext(), getString(R.string.error_read_file), Toast.LENGTH_SHORT).show();
+                    }
+                    if (photoUri != null && isAdded()) {
+                        if (binding != null) {
+                            binding.etMessage.setHint(getString(R.string.msg_processing_photo));
+                        }
+                        final Uri finalPhotoUri = photoUri;
+                        new Thread(() -> {
+                            try {
+                                InputStream inputStream = requireActivity().getContentResolver().openInputStream(finalPhotoUri);
+                                ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+                                int bufferSize = 1024;
+                                byte[] buffer = new byte[bufferSize];
+                                int len;
+                                while ((len = inputStream.read(buffer)) != -1) {
+                                    byteBuffer.write(buffer, 0, len);
+                                }
+                                byte[] fullBytes = byteBuffer.toByteArray();
+
+                                byte[] processed = ImageUtil.processImage(fullBytes);
+
+                                if (isAdded()) {
+                                    requireActivity().runOnUiThread(() -> {
+                                        resetMediaSelections();
+                                        selectedImageBytes = processed;
+                                        if (binding != null) {
+                                             binding.etMessage.setHint(getString(R.string.msg_photo_captured));
+                                        }
+                                        Toast.makeText(getContext(), getString(R.string.msg_photo_ready), Toast.LENGTH_SHORT).show();
+                                    });
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                if (isAdded()) {
+                                    requireActivity().runOnUiThread(() -> {
+                                        Toast.makeText(getContext(), getString(R.string.error_read_file), Toast.LENGTH_SHORT).show();
+                                    });
+                                }
+                            }
+                        }).start();
                     }
                 }
             }
@@ -187,10 +210,18 @@ public class TextDoc extends Fragment {
     private void setupPermissions() {
         textDocPermission = new GalleryPermission(this, (imageBytes, uri) -> {
             if (imageBytes != null && binding != null) {
-                resetMediaSelections();
-                selectedImageBytes = ImageUtil.processImage(imageBytes);
-                binding.etMessage.setHint(getString(R.string.hint_type_message));
-                Toast.makeText(getContext(), getString(R.string.msg_image_selected), Toast.LENGTH_SHORT).show();
+                binding.etMessage.setHint(getString(R.string.msg_processing_image));
+                new Thread(() -> {
+                    byte[] processed = ImageUtil.processImage(imageBytes);
+                    if (isAdded()) {
+                        requireActivity().runOnUiThread(() -> {
+                            resetMediaSelections();
+                            selectedImageBytes = processed;
+                            binding.etMessage.setHint(getString(R.string.hint_type_message));
+                            Toast.makeText(getContext(), getString(R.string.msg_image_selected), Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                }).start();
             }
         });
 
@@ -461,6 +492,14 @@ public class TextDoc extends Fragment {
             return;
         }
 
+        // Save URI to SharedPreferences in case of Activity recreation
+        if (getContext() != null) {
+            getContext().getSharedPreferences("CameraPrefs", Context.MODE_PRIVATE)
+                    .edit()
+                    .putString("currentPhotoUri", currentPhotoUri.toString())
+                    .apply();
+        }
+
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, currentPhotoUri);
         try {
@@ -533,6 +572,11 @@ public class TextDoc extends Fragment {
         updateEmptyState();
         scrollToBottom();
         setLoadingState(true);
+
+        // 🔥 YENİ: Anında typing balonunu ekle (Böylece Storage upload süresi boyunca da görünür)
+        MessageModel loadingMsg = new MessageModel("loading", "model", "...", "TEXT", Timestamp.now());
+        adapter.addMessage(loadingMsg);
+        scrollToBottom();
 
         binding.etMessage.setHint(getString(R.string.hint_type_message));
         binding.etMessage.setText("");
@@ -756,7 +800,14 @@ public class TextDoc extends Fragment {
 
         String contentToSend = (manualPrompt != null) ? manualPrompt : userMessage.getContent();
 
-        geminiClient.sendMessage(contentToSend, mediaBytes, mediaType, new GeminiClient.GeminiCallback() {
+        String mediaUrl = null;
+        if (mediaType != null) {
+            if ("IMAGE".equals(mediaType)) mediaUrl = userMessage.getImageUrl();
+            else if ("AUDIO".equals(mediaType)) mediaUrl = userMessage.getAudioUrl();
+            else if ("DOC".equals(mediaType)) mediaUrl = userMessage.getDocUrl();
+        }
+
+        geminiClient.sendMessage(contentToSend, mediaUrl, mediaType, new GeminiClient.GeminiCallback() {
             @Override
             public void onSuccess(String response) {
                 // 1. ARKA PLAN: Veriyi mutlaka kaydet (Burası Mükemmel) ✅

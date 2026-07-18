@@ -60,15 +60,21 @@ public class AudioPermission {
                             return;
                         }
 
-                        // 2. ADIM: Boyut uygunsa RAM'e yükle
-                        byte[] audioBytes = getBytesFromUri(uri);
-                        String fileName = getFileName(uri);
+                        // 2. ADIM: Boyut uygunsa RAM'e yükle (BACKGROUND THREAD)
+                        new Thread(() -> {
+                            byte[] audioBytes = getBytesFromUri(uri);
+                            String fileName = getFileName(uri);
 
-                        if (audioBytes != null) {
-                            callback.onAudioSelected(audioBytes, fileName);
-                        } else {
-                            Toast.makeText(fragment.getContext(), fragment.getString(R.string.error_read_audio), Toast.LENGTH_SHORT).show();
-                        }
+                            if (fragment.isAdded()) {
+                                fragment.requireActivity().runOnUiThread(() -> {
+                                    if (audioBytes != null) {
+                                        callback.onAudioSelected(audioBytes, fileName);
+                                    } else {
+                                        Toast.makeText(fragment.getContext(), fragment.getString(R.string.error_read_audio), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                        }).start();
                     }
                 }
         );

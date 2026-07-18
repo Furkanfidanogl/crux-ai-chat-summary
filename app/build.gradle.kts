@@ -7,14 +7,12 @@ plugins {
 
 android {
     namespace = "com.furkanfidanoglu.cruxaisummarize"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.furkanfidanoglu.cruxaisummarize"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 96
         versionName = "1.0"
 
@@ -70,7 +68,7 @@ dependencies {
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
     implementation("com.google.firebase:firebase-appcheck-debug")
 
-    val nav_version = "2.9.6"
+    val nav_version = "2.8.8"
     implementation("androidx.navigation:navigation-fragment:${nav_version}")
     implementation("androidx.navigation:navigation-ui:${nav_version}")
 

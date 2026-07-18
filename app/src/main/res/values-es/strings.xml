@@ -211,4 +211,6 @@
     <string name="error_media_too_large">El archivo multimedia es demasiado grande. Seleccione un archivo más pequeño.</string>
     <string name="error_timeout">Tiempo de respuesta excedido. Por favor, inténtelo más tarde.</string>
     <string name="msg_file_uploaded">%1$s subido 🚀</string>
+    <string name="msg_processing_image">Procesando imagen... ⏳</string>
+    <string name="msg_processing_photo">Procesando foto... ⏳</string>
 </resources>

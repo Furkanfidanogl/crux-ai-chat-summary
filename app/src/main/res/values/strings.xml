@@ -210,4 +210,6 @@
     <string name="error_media_too_large">Media file is too large. Please select a smaller file.</string>
     <string name="error_timeout">Response time exceeded. Please try again later.</string>
     <string name="msg_file_uploaded">%1$s uploaded 🚀</string>
+    <string name="msg_processing_image">Processing image... ⏳</string>
+    <string name="msg_processing_photo">Processing photo... ⏳</string>
 </resources>

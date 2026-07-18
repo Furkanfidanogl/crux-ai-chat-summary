@@ -212,4 +212,6 @@
     <string name="error_media_too_large">Fichier trop gros. Choisissez un plus petit fichier.</string>
     <string name="error_timeout">Reponse trop lente. Reessayez plus tard.</string>
     <string name="msg_file_uploaded">%1$s téléchargé 🚀</string>
+    <string name="msg_processing_image">Traitement de l\'image... ⏳</string>
+    <string name="msg_processing_photo">Traitement de la photo... ⏳</string>
 </resources>

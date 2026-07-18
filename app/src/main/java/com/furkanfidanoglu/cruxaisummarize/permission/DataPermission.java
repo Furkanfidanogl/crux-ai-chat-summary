@@ -53,45 +53,56 @@ public class DataPermission {
     }
 
     private void handleFileSelection(Uri uri) {
-        try {
-            Context context = fragment.getContext();
-            if (context == null) return;
+        new Thread(() -> {
+            try {
+                Context context = fragment.getContext();
+                if (context == null) return;
 
-            InputStream inputStream = context.getContentResolver().openInputStream(uri);
-            ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-            int bufferSize = 1024;
-            byte[] buffer = new byte[bufferSize];
-            int len;
-            int totalBytesRead = 0;
+                InputStream inputStream = context.getContentResolver().openInputStream(uri);
+                ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+                int bufferSize = 1024;
+                byte[] buffer = new byte[bufferSize];
+                int len;
+                int totalBytesRead = 0;
 
-            // 🔥 DÖNGÜ İÇİ KONTROL (RAM KORUMASI)
-            while ((len = inputStream.read(buffer)) != -1) {
-                totalBytesRead += len;
+                // 🔥 DÖNGÜ İÇİ KONTROL (RAM KORUMASI)
+                while ((len = inputStream.read(buffer)) != -1) {
+                    totalBytesRead += len;
 
-                // Eğer dosya 512 KB'ı aştıysa okumayı DURDUR
-                if (totalBytesRead > MAX_FILE_SIZE) {
-                    inputStream.close();
-                    // "Dosya çok büyük" uyarısı
-                    Toast.makeText(context, context.getString(R.string.msg_dataset_large), Toast.LENGTH_SHORT).show();
-                    return; // Callback çağrılmaz, Fragment tarafına null gitmez, işlem biter.
+                    // Eğer dosya 512 KB'ı aştıysa okumayı DURDUR
+                    if (totalBytesRead > MAX_FILE_SIZE) {
+                        inputStream.close();
+                        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                            Toast.makeText(context, context.getString(R.string.msg_dataset_large), Toast.LENGTH_SHORT).show();
+                        });
+                        return; // Callback çağrılmaz, Fragment tarafına null gitmez, işlem biter.
+                    }
+
+                    byteBuffer.write(buffer, 0, len);
                 }
 
-                byteBuffer.write(buffer, 0, len);
+                byte[] fileBytes = byteBuffer.toByteArray();
+                inputStream.close();
+
+                String fileName = getFileName(context, uri);
+
+                if (fragment.isAdded()) {
+                    fragment.requireActivity().runOnUiThread(() -> {
+                        if (callback != null) {
+                            callback.onDataSelected(fileBytes, fileName);
+                        }
+                    });
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                if (fragment.isAdded()) {
+                    fragment.requireActivity().runOnUiThread(() -> {
+                        Toast.makeText(fragment.getContext(), fragment.getString(R.string.error_read_file), Toast.LENGTH_SHORT).show();
+                    });
+                }
             }
-
-            byte[] fileBytes = byteBuffer.toByteArray();
-            inputStream.close();
-
-            String fileName = getFileName(context, uri);
-
-            if (callback != null) {
-                callback.onDataSelected(fileBytes, fileName);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(fragment.getContext(), fragment.getString(R.string.error_read_file), Toast.LENGTH_SHORT).show();
-        }
+        }).start();
     }
 
     private String getFileName(Context context, Uri uri) {
