@@ -12,6 +12,14 @@ public class SessionManager {
     private String activeChatId;
     private List<MessageModel> activeMessages;
     private final Object sessionLock = new Object();
+    
+    // Callback & State for Active AI Query
+    public interface ChatCallback {
+        void onSuccess(MessageModel botMessage);
+        void onError(Throwable t);
+    }
+    private ChatCallback activeCallback;
+    private boolean aiLoading = false;
 
     private SessionManager() {
         activeMessages = new ArrayList<>();
@@ -74,9 +82,34 @@ public class SessionManager {
     public void clearSession() {
         synchronized (sessionLock) {
             this.activeChatId = null;
+            this.aiLoading = false;
             if (activeMessages != null) {
                 activeMessages.clear();
             }
+        }
+    }
+
+    public ChatCallback getChatCallback() {
+        synchronized (sessionLock) {
+            return activeCallback;
+        }
+    }
+
+    public void setChatCallback(ChatCallback callback) {
+        synchronized (sessionLock) {
+            this.activeCallback = callback;
+        }
+    }
+
+    public boolean isAILoading() {
+        synchronized (sessionLock) {
+            return aiLoading;
+        }
+    }
+
+    public void setAILoading(boolean loading) {
+        synchronized (sessionLock) {
+            this.aiLoading = loading;
         }
     }
 

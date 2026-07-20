@@ -69,6 +69,16 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
+    public void removeLoadingItem() {
+        if (!messageList.isEmpty()) {
+            int index = messageList.size() - 1;
+            if ("loading".equals(messageList.get(index).getId())) {
+                messageList.remove(index);
+                notifyItemRemoved(index);
+            }
+        }
+    }
+
     public void clearMessages() {
         messageList.clear();
         notifyDataSetChanged();
@@ -103,6 +113,19 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_chat_gemini, parent, false);
             return new ModelViewHolder(view);
         }
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position, @NonNull List<Object> payloads) {
+        if (!payloads.isEmpty()) {
+            for (Object payload : payloads) {
+                if ("typing".equals(payload) && holder instanceof ModelViewHolder) {
+                    ((ModelViewHolder) holder).updateText(messageList.get(position));
+                    return; // Processed partial update, skip full rebind
+                }
+            }
+        }
+        super.onBindViewHolder(holder, position, payloads);
     }
 
     @Override
@@ -200,18 +223,47 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             if (dialog.getWindow() != null) {
                 dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#E6000000")));
             }
-            ImageView fullScreenImage = new ImageView(context);
-            fullScreenImage.setLayoutParams(new ViewGroup.LayoutParams(
+
+            android.widget.FrameLayout rootLayout = new android.widget.FrameLayout(context);
+            rootLayout.setLayoutParams(new ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT));
-            fullScreenImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
+            com.furkanfidanoglu.cruxaisummarize.util.helpers.TouchImageView touchImageView = 
+                    new com.furkanfidanoglu.cruxaisummarize.util.helpers.TouchImageView(context);
+            touchImageView.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT));
+
             if (message.getImage() != null) {
-                Glide.with(context).load(message.getImage()).into(fullScreenImage);
+                Glide.with(context).load(message.getImage()).into(touchImageView);
             } else if (message.getImageUrl() != null) {
-                Glide.with(context).load(message.getImageUrl()).into(fullScreenImage);
+                Glide.with(context).load(message.getImageUrl()).into(touchImageView);
             }
-            fullScreenImage.setOnClickListener(v -> dialog.dismiss());
-            dialog.setContentView(fullScreenImage);
+
+            rootLayout.addView(touchImageView);
+
+            // Styled circular Close button at top right
+            ImageView closeButton = new ImageView(context);
+            int size = dpToPx(40);
+            android.widget.FrameLayout.LayoutParams closeParams = new android.widget.FrameLayout.LayoutParams(size, size);
+            closeParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
+            closeParams.topMargin = dpToPx(24);
+            closeParams.rightMargin = dpToPx(24);
+            closeButton.setLayoutParams(closeParams);
+
+            android.graphics.drawable.GradientDrawable circleBg = new android.graphics.drawable.GradientDrawable();
+            circleBg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            circleBg.setColor(Color.parseColor("#4D000000"));
+            closeButton.setBackground(circleBg);
+            closeButton.setImageResource(android.R.drawable.ic_menu_close_clear_cancel);
+            closeButton.setColorFilter(Color.WHITE);
+            closeButton.setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8));
+            closeButton.setOnClickListener(v -> dialog.dismiss());
+
+            rootLayout.addView(closeButton);
+
+            dialog.setContentView(rootLayout);
             dialog.setCancelable(true);
             dialog.show();
         }
@@ -234,21 +286,25 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             if ("loading".equals(message.getId())) {
                 tvMessage.setText(itemView.getContext().getString(R.string.status_typing));
             } else {
-                String content = message.getContent() != null ? message.getContent() : "";
-                String cleanContent = content.replace("**", "");
-                tvMessage.setText(cleanContent);
-
-                // 🔥🔥🔥 BOT İÇİN DÜZELTİLMİŞ LINK AYARI 🔥🔥🔥
-                tvMessage.setAutoLinkMask(0);
-
-                // Patterns.WEB_URL yerine STRICT_URL_PATTERN
-                Linkify.addLinks(tvMessage, STRICT_URL_PATTERN, "https://", null, SMART_URL_FILTER);
-                Linkify.addLinks(tvMessage, Patterns.EMAIL_ADDRESS, "mailto:");
-
-                tvMessage.setMovementMethod(LinkMovementMethod.getInstance());
-                tvMessage.setLinkTextColor(Color.parseColor("#6C63FF"));
-                // 🔥🔥🔥 BİTİŞ 🔥🔥🔥
+                updateText(message);
             }
+        }
+
+        void updateText(MessageModel message) {
+            String content = message.getContent() != null ? message.getContent() : "";
+            String cleanContent = content.replace("**", "");
+            tvMessage.setText(cleanContent);
+
+            // 🔥🔥🔥 BOT İÇİN DÜZELTİLMİŞ LINK AYARI 🔥🔥🔥
+            tvMessage.setAutoLinkMask(0);
+
+            // Patterns.WEB_URL yerine STRICT_URL_PATTERN
+            Linkify.addLinks(tvMessage, STRICT_URL_PATTERN, "https://", null, SMART_URL_FILTER);
+            Linkify.addLinks(tvMessage, Patterns.EMAIL_ADDRESS, "mailto:");
+
+            tvMessage.setMovementMethod(LinkMovementMethod.getInstance());
+            tvMessage.setLinkTextColor(Color.parseColor("#6C63FF"));
+            // 🔥🔥🔥 BİTİŞ 🔥🔥🔥
         }
     }
 }

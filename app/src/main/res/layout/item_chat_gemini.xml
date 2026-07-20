@@ -15,7 +15,7 @@
         app:cardElevation="0dp"
         android:layout_marginStart="16dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="@+id/cardBotBubble">
+        app:layout_constraintTop_toTopOf="@+id/cardBotBubble">
 
         <ImageView
             android:id="@+id/imgBotAvatar"

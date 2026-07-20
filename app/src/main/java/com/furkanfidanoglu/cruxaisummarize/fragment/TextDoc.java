@@ -73,6 +73,12 @@ public class TextDoc extends Fragment {
     private boolean isLinkRequest = false;
     private String currentChatId;
 
+    // Typewriter Fields
+    private final android.os.Handler typewriterHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable activeTypewriterRunnable = null;
+    private MessageModel activeTypewriterMessage = null;
+    private String activeTypewriterFullText = null;
+
     // Selected Media Data
     private byte[] selectedImageBytes = null;
     private Uri currentPhotoUri;
@@ -101,7 +107,8 @@ public class TextDoc extends Fragment {
                         final Uri finalPhotoUri = photoUri;
                         new Thread(() -> {
                             try {
-                                InputStream inputStream = requireActivity().getContentResolver().openInputStream(finalPhotoUri);
+                                InputStream inputStream = requireActivity().getContentResolver()
+                                        .openInputStream(finalPhotoUri);
                                 ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
                                 int bufferSize = 1024;
                                 byte[] buffer = new byte[bufferSize];
@@ -118,24 +125,25 @@ public class TextDoc extends Fragment {
                                         resetMediaSelections();
                                         selectedImageBytes = processed;
                                         if (binding != null) {
-                                             binding.etMessage.setHint(getString(R.string.msg_photo_captured));
+                                            binding.etMessage.setHint(getString(R.string.msg_photo_captured));
                                         }
-                                        Toast.makeText(getContext(), getString(R.string.msg_photo_ready), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getContext(), getString(R.string.msg_photo_ready),
+                                                Toast.LENGTH_SHORT).show();
                                     });
                                 }
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 if (isAdded()) {
                                     requireActivity().runOnUiThread(() -> {
-                                        Toast.makeText(getContext(), getString(R.string.error_read_file), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getContext(), getString(R.string.error_read_file),
+                                                Toast.LENGTH_SHORT).show();
                                     });
                                 }
                             }
                         }).start();
                     }
                 }
-            }
-    );
+            });
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -150,6 +158,34 @@ public class TextDoc extends Fragment {
         dbManager = FirebaseDBManager.getInstance();
         sessionManager = SessionManager.getInstance();
 
+        sessionManager.setChatCallback(new SessionManager.ChatCallback() {
+            @Override
+            public void onSuccess(MessageModel botMessage) {
+                typewriterHandler.post(() -> {
+                    if (isAdded() && getActivity() != null) {
+                        adapter.removeLoadingItem();
+                        startTypewriterEffect(botMessage, botMessage.getContent());
+                        updateEmptyState();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                typewriterHandler.post(() -> {
+                    if (isAdded() && getActivity() != null) {
+                        adapter.removeLoadingItem();
+                        String displayError = t.getMessage();
+                        if (displayError == null || displayError.isEmpty()) {
+                            displayError = getString(R.string.error_unknown);
+                        }
+                        Toast.makeText(getContext(), displayError, Toast.LENGTH_LONG).show();
+                        setLoadingState(false);
+                    }
+                });
+            }
+        });
+
         // 🔥 HAYAT KURTARAN HAMLE: Fragment açıldığında yükleniyor modunu sıfırla.
         // Böylece kullanıcı geri döndüğünde butonlar kilitli kalmaz.
         setLoadingState(false);
@@ -161,19 +197,20 @@ public class TextDoc extends Fragment {
     }
 
     private void setupBackPressHandler() {
-        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new androidx.activity.OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (binding != null && binding.layoutAttachments.getVisibility() == View.VISIBLE) {
-                    hideAttachmentMenu();
-                } else if (adapter.getItemCount() > 0) {
-                    startNewChatInternal();
-                } else {
-                    setEnabled(false); // Sisteme devret
-                    requireActivity().getOnBackPressedDispatcher().onBackPressed();
-                }
-            }
-        });
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(),
+                new androidx.activity.OnBackPressedCallback(true) {
+                    @Override
+                    public void handleOnBackPressed() {
+                        if (binding != null && binding.layoutAttachments.getVisibility() == View.VISIBLE) {
+                            hideAttachmentMenu();
+                        } else if (adapter.getItemCount() > 0) {
+                            startNewChatInternal();
+                        } else {
+                            setEnabled(false); // Sisteme devret
+                            requireActivity().getOnBackPressedDispatcher().onBackPressed();
+                        }
+                    }
+                });
     }
 
     private void setupRecyclerView() {
@@ -218,7 +255,8 @@ public class TextDoc extends Fragment {
                             resetMediaSelections();
                             selectedImageBytes = processed;
                             binding.etMessage.setHint(getString(R.string.hint_type_message));
-                            Toast.makeText(getContext(), getString(R.string.msg_image_selected), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), getString(R.string.msg_image_selected), Toast.LENGTH_SHORT)
+                                    .show();
                         });
                     }
                 }).start();
@@ -233,7 +271,8 @@ public class TextDoc extends Fragment {
 
                 binding.etMessage.setHint(fileName);
                 binding.etMessage.setText("");
-                Toast.makeText(getContext(), getString(R.string.msg_file_uploaded, fileName), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.msg_file_uploaded, fileName), Toast.LENGTH_SHORT)
+                        .show();
             }
         });
 
@@ -257,9 +296,8 @@ public class TextDoc extends Fragment {
                         String text = readDocxFile(docBytes);
 
                         if (isAdded() && getActivity() != null) {
-                            getActivity().runOnUiThread(() ->
-                                    handleParsedTextResult(text, getString(R.string.msg_word_ready))
-                            );
+                            getActivity().runOnUiThread(
+                                    () -> handleParsedTextResult(text, getString(R.string.msg_word_ready)));
                         }
                     }).start();
                 } else {
@@ -300,15 +338,15 @@ public class TextDoc extends Fragment {
                         }
                         extractedDataText = text;
                         if (isAdded()) {
-                            requireActivity().runOnUiThread(() ->
-                                    Toast.makeText(getContext(), getString(R.string.msg_data_ready), Toast.LENGTH_SHORT).show()
-                            );
+                            requireActivity().runOnUiThread(() -> Toast
+                                    .makeText(getContext(), getString(R.string.msg_data_ready), Toast.LENGTH_SHORT)
+                                    .show());
                         }
                     } else {
                         if (isAdded()) {
-                            requireActivity().runOnUiThread(() ->
-                                    Toast.makeText(getContext(), getString(R.string.error_read_file), Toast.LENGTH_SHORT).show()
-                            );
+                            requireActivity().runOnUiThread(() -> Toast
+                                    .makeText(getContext(), getString(R.string.error_read_file), Toast.LENGTH_SHORT)
+                                    .show());
                         }
                     }
                 }).start();
@@ -317,35 +355,36 @@ public class TextDoc extends Fragment {
     }
 
     private void handleParsedTextResult(String text, String successMsg) {
-        if (!isAdded()) return;
+        if (!isAdded())
+            return;
         if (text != null && !text.isEmpty()) {
             extractedDocText = text;
-            requireActivity().runOnUiThread(() ->
-                    Toast.makeText(getContext(), successMsg, Toast.LENGTH_SHORT).show()
-            );
+            requireActivity().runOnUiThread(() -> Toast.makeText(getContext(), successMsg, Toast.LENGTH_SHORT).show());
         } else {
-            requireActivity().runOnUiThread(() ->
-                    Toast.makeText(getContext(), getString(R.string.error_read_file), Toast.LENGTH_SHORT).show()
-            );
+            requireActivity().runOnUiThread(
+                    () -> Toast.makeText(getContext(), getString(R.string.error_read_file), Toast.LENGTH_SHORT).show());
         }
     }
 
     private void setupClickListeners() {
-        binding.etMessage.setFilters(new InputFilter[]{new InputFilter.LengthFilter(5000)});
+        binding.etMessage.setFilters(new InputFilter[] { new InputFilter.LengthFilter(5000) });
 
         binding.btnAttach.setOnClickListener(v -> {
-            if (!isLoading) toggleAttachmentMenu();
+            if (!isLoading)
+                toggleAttachmentMenu();
         });
 
         binding.btnSend.setOnClickListener(v -> {
-            if (isLoading) return;
+            if (isLoading)
+                return;
             hideAttachmentMenu();
             String message = binding.etMessage.getText().toString().trim();
 
             boolean hasMedia = selectedImageBytes != null || selectedAudioBytes != null || selectedDocBytes != null;
             boolean hasTextData = extractedDocText != null || extractedDataText != null;
 
-            if (message.isEmpty() && !hasMedia && !hasTextData) return;
+            if (message.isEmpty() && !hasMedia && !hasTextData)
+                return;
 
             if (!hasMedia && !hasTextData) {
                 if (containsLink(message)) {
@@ -427,7 +466,8 @@ public class TextDoc extends Fragment {
                     if (CameraPermission.hasCameraPermission(getContext())) {
                         openCamera();
                     } else {
-                        requestPermissions(new String[]{android.Manifest.permission.CAMERA}, CameraPermission.CAMERA_PERMISSION_CODE);
+                        requestPermissions(new String[] { android.Manifest.permission.CAMERA },
+                                CameraPermission.CAMERA_PERMISSION_CODE);
                     }
                 }
 
@@ -461,31 +501,36 @@ public class TextDoc extends Fragment {
 
         binding.chipCanDo.setOnClickListener(v -> {
             hideAttachmentMenu();
-            if (!isLoading) handleSendLogic(getString(R.string.msg_prompt_capabilities));
+            if (!isLoading)
+                handleSendLogic(getString(R.string.msg_prompt_capabilities));
         });
         binding.chipImage.setOnClickListener(v -> {
             hideAttachmentMenu();
-            if (!isLoading) handleSendLogic(getString(R.string.msg_prompt_audio));
+            if (!isLoading)
+                handleSendLogic(getString(R.string.msg_prompt_audio));
         });
         binding.chipPDF.setOnClickListener(v -> {
             hideAttachmentMenu();
-            if (!isLoading) handleSendLogic(getString(R.string.msg_prompt_website));
+            if (!isLoading)
+                handleSendLogic(getString(R.string.msg_prompt_website));
         });
 
         binding.etMessage.setOnClickListener(v -> hideAttachmentMenu());
         binding.etMessage.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) hideAttachmentMenu();
+            if (hasFocus)
+                hideAttachmentMenu();
         });
-
 
     }
 
     private void openCamera() {
-        if (getActivity() == null) return;
+        if (getActivity() == null)
+            return;
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.TITLE, "New Picture");
         values.put(MediaStore.Images.Media.DESCRIPTION, "From Camera");
-        currentPhotoUri = requireActivity().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        currentPhotoUri = requireActivity().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                values);
 
         if (currentPhotoUri == null) {
             Toast.makeText(getContext(), getString(R.string.msg_camera_error), Toast.LENGTH_SHORT).show();
@@ -510,7 +555,8 @@ public class TextDoc extends Fragment {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == CameraPermission.CAMERA_PERMISSION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -572,6 +618,7 @@ public class TextDoc extends Fragment {
         updateEmptyState();
         scrollToBottom();
         setLoadingState(true);
+        sessionManager.setAILoading(true); // AI loading starts now!
 
         // 🔥 YENİ: Anında typing balonunu ekle (Böylece Storage upload süresi boyunca da görünür)
         MessageModel loadingMsg = new MessageModel("loading", "model", "...", "TEXT", Timestamp.now());
@@ -601,7 +648,8 @@ public class TextDoc extends Fragment {
             selectedFileName = null;
             sendMessageToGeminiInternal(userMessage, null, "TEXT", true, fullPrompt);
         } else if (extractedDataText != null) {
-            String fullPrompt = getString(R.string.msg_data_prompt) + extractedDataText + "\n\nUSER QUESTION: " + messageText;
+            String fullPrompt = getString(R.string.msg_data_prompt) + extractedDataText + "\n\nUSER QUESTION: "
+                    + messageText;
             extractedDataText = null;
             selectedFileName = null;
             sendMessageToGeminiInternal(userMessage, null, "TEXT", true, fullPrompt);
@@ -626,12 +674,14 @@ public class TextDoc extends Fragment {
     }
 
     private boolean containsLink(String text) {
-        if (text == null) return false;
+        if (text == null)
+            return false;
 
         String lower = text.toLowerCase();
 
         // 🛡️ 1. MAIL KORUMASI (ÖNEMLİ)
-        if (lower.contains("@")) return false;
+        if (lower.contains("@"))
+            return false;
 
         // 🚨 2. KESİN LİNK BELİRTİLERİ
         if (lower.contains("http://") ||
@@ -655,7 +705,7 @@ public class TextDoc extends Fragment {
 
     private String readDocxFile(byte[] fileBytes) {
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(fileBytes);
-             XWPFDocument document = new XWPFDocument(inputStream)) {
+                XWPFDocument document = new XWPFDocument(inputStream)) {
             StringBuilder sb = new StringBuilder();
             for (XWPFParagraph para : document.getParagraphs()) {
                 sb.append(para.getText()).append("\n");
@@ -668,7 +718,8 @@ public class TextDoc extends Fragment {
 
     private String readCsvFile(byte[] fileBytes) {
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(fileBytes);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -682,7 +733,7 @@ public class TextDoc extends Fragment {
 
     private String readExcelFile(byte[] fileBytes) {
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(fileBytes);
-             Workbook workbook = new XSSFWorkbook(inputStream)) {
+                Workbook workbook = new XSSFWorkbook(inputStream)) {
             StringBuilder sb = new StringBuilder();
             Sheet sheet = workbook.getSheetAt(0);
             for (Row row : sheet) {
@@ -701,7 +752,8 @@ public class TextDoc extends Fragment {
     private void processWebLink(MessageModel userMessage) {
         if (isAdded()) {
             requireActivity().runOnUiThread(() -> {
-                MessageModel loadingMsg = new MessageModel("loading", "model", getString(R.string.msg_reading_web), "TEXT", Timestamp.now());
+                MessageModel loadingMsg = new MessageModel("loading", "model", getString(R.string.msg_reading_web),
+                        "TEXT", Timestamp.now());
                 adapter.addMessage(loadingMsg);
                 scrollToBottom();
             });
@@ -710,28 +762,25 @@ public class TextDoc extends Fragment {
         WebScraper.scrapeUrl(userMessage.getContent(), new WebScraper.ScrapeCallback() {
             @Override
             public void onSuccess(String cleanContent) {
-                String promptPrefix = "Here is the website content. Please analyze it:\n\n";
-                // Güvenli Context Erişimi
-                if (getContext() != null) {
-                    promptPrefix = getString(R.string.msg_web_prompt);
-                }
-
-                String finalPrompt = promptPrefix + userMessage.getContent() + "\n\nCONTENT:\n" + cleanContent;
-
-                if (isAdded()) {
-                    requireActivity().runOnUiThread(() -> adapter.removeLastItem());
-                }
-
-                sendMessageToGeminiInternal(userMessage, null, "LINK", true, finalPrompt);
+                typewriterHandler.post(() -> {
+                    if (isAdded()) {
+                        String promptPrefix = getString(R.string.msg_web_prompt);
+                        String finalPrompt = promptPrefix + userMessage.getContent() + "\n\nCONTENT:\n" + cleanContent;
+                        adapter.removeLoadingItem();
+                        sendMessageToGeminiInternal(userMessage, null, "LINK", true, finalPrompt);
+                    }
+                });
             }
 
             @Override
             public void onError(String error) {
-                if (!isAdded()) return;
-                requireActivity().runOnUiThread(() -> {
-                    adapter.removeLastItem();
-                    setLoadingState(false);
-                    Toast.makeText(getContext(), getString(R.string.msg_web_error) + error, Toast.LENGTH_SHORT).show();
+                sessionManager.setAILoading(false);
+                typewriterHandler.post(() -> {
+                    if (isAdded()) {
+                        adapter.removeLoadingItem();
+                        setLoadingState(false);
+                        Toast.makeText(getContext(), getString(R.string.msg_web_error) + error, Toast.LENGTH_SHORT).show();
+                    }
                 });
             }
         });
@@ -741,12 +790,20 @@ public class TextDoc extends Fragment {
         dbManager.checkImageLimit(new FirebaseDBManager.LimitCallback() {
             @Override
             public void onSuccess() {
-                uploadMediaAndSend(userMessage, mediaBytes, type);
+                typewriterHandler.post(() -> {
+                    if (isAdded()) {
+                        uploadMediaAndSend(userMessage, mediaBytes, type);
+                    }
+                });
             }
 
             @Override
             public void onLimitReached(String message) {
-                handleQuotaError(message);
+                typewriterHandler.post(() -> {
+                    if (isAdded()) {
+                        handleQuotaError(message);
+                    }
+                });
             }
         });
     }
@@ -757,18 +814,25 @@ public class TextDoc extends Fragment {
             @Override
             public void onSuccess(String mediaUrl) {
                 // Upload biter bitmez kullanıcı çıksa bile modele URL'i yaz
-                if (type.equals("IMAGE")) userMessage.setImageUrl(mediaUrl);
-                else if (type.equals("AUDIO")) userMessage.setAudioUrl(mediaUrl);
-                else if (type.equals("DOC")) userMessage.setDocUrl(mediaUrl);
+                if (type.equals("IMAGE"))
+                    userMessage.setImageUrl(mediaUrl);
+                else if (type.equals("AUDIO"))
+                    userMessage.setAudioUrl(mediaUrl);
+                else if (type.equals("DOC"))
+                    userMessage.setDocUrl(mediaUrl);
 
-                // Ve Gemini'yi tetikle (Burada isAdded() kontrolü YOK, arka planda da çalışmalı)
+                // Ve Gemini'yi tetikle (Burada isAdded() kontrolü YOK, arka planda da
+                // çalışmalı)
                 sendMessageToGeminiInternal(userMessage, mediaBytes, type, true, null);
             }
 
             @Override
             public void onError(String error) {
-                if (!isAdded()) return;
-                handleQuotaError(error);
+                typewriterHandler.post(() -> {
+                    if (isAdded()) {
+                        handleQuotaError(error);
+                    }
+                });
             }
         };
 
@@ -778,14 +842,17 @@ public class TextDoc extends Fragment {
             String ext = "bin";
             if (userMessage.getFileName() != null && userMessage.getFileName().contains(".")) {
                 ext = userMessage.getFileName().substring(userMessage.getFileName().lastIndexOf(".") + 1);
-            } else if (type.equals("DOC")) ext = "pdf";
-            else if (type.equals("AUDIO")) ext = "mp3";
+            } else if (type.equals("DOC"))
+                ext = "pdf";
+            else if (type.equals("AUDIO"))
+                ext = "mp3";
 
             dbManager.uploadByteFileToStorage(mediaBytes, ext, callback);
         }
     }
 
-    private void sendMessageToGeminiInternal(MessageModel userMessage, byte[] mediaBytes, String mediaType, boolean consumeQuota, @Nullable String manualPrompt) {
+    private void sendMessageToGeminiInternal(MessageModel userMessage, byte[] mediaBytes, String mediaType,
+            boolean consumeQuota, @Nullable String manualPrompt) {
 
         if (isAdded() && binding != null) {
             if (adapter.getItemCount() > 0 && !adapter.getLastItem().getId().equals("loading")) {
@@ -795,70 +862,69 @@ public class TextDoc extends Fragment {
             }
         }
 
-        dbManager.saveMessage(currentChatId, userMessage);
-        dbManager.updateChatPreview(currentChatId, userMessage.getContent(), userMessage.getType(), Timestamp.now());
+        final String chatIdSnapshot = currentChatId;
+
+        dbManager.saveMessage(chatIdSnapshot, userMessage);
+        dbManager.updateChatPreview(chatIdSnapshot, userMessage.getContent(), userMessage.getType(), Timestamp.now());
 
         String contentToSend = (manualPrompt != null) ? manualPrompt : userMessage.getContent();
 
         String mediaUrl = null;
         if (mediaType != null) {
-            if ("IMAGE".equals(mediaType)) mediaUrl = userMessage.getImageUrl();
-            else if ("AUDIO".equals(mediaType)) mediaUrl = userMessage.getAudioUrl();
-            else if ("DOC".equals(mediaType)) mediaUrl = userMessage.getDocUrl();
+            if ("IMAGE".equals(mediaType))
+                mediaUrl = userMessage.getImageUrl();
+            else if ("AUDIO".equals(mediaType))
+                mediaUrl = userMessage.getAudioUrl();
+            else if ("DOC".equals(mediaType))
+                mediaUrl = userMessage.getDocUrl();
         }
+
+        sessionManager.setAILoading(true);
 
         geminiClient.sendMessage(contentToSend, mediaUrl, mediaType, new GeminiClient.GeminiCallback() {
             @Override
             public void onSuccess(String response) {
-                // 1. ARKA PLAN: Veriyi mutlaka kaydet (Burası Mükemmel) ✅
+                // Her halükarda veriyi mutlaka kaydet (Arka planda da çalışmalı)
                 MessageModel botMessage = new MessageModel(String.valueOf(System.currentTimeMillis()), "model", response, "TEXT", Timestamp.now());
-
-                sessionManager.addMessage(botMessage);
-                dbManager.saveMessage(currentChatId, botMessage);
-                dbManager.updateChatPreview(currentChatId, response, "TEXT", Timestamp.now());
+                dbManager.saveMessage(chatIdSnapshot, botMessage);
+                dbManager.updateChatPreview(chatIdSnapshot, response, "TEXT", Timestamp.now());
 
                 if (consumeQuota) {
                     long size = (mediaBytes != null) ? mediaBytes.length : contentToSend.length();
                     dbManager.incrementUsage(mediaType, size);
                 }
 
-                // 2. ÖN YÜZ: UI Güncellemesi
-                if (isAdded() && getActivity() != null) {
-                    requireActivity().runOnUiThread(() -> {
-                        adapter.removeLastItem(); // Loading'i sil
-                        adapter.addMessage(botMessage); // Mesajı ekle
-                        scrollToBottom();
-                        updateEmptyState();
-                        setLoadingState(false);
-                    });
+                // Sadece aktif sohbet bu istek yapıldığındaki sohbet ise UI ve Session'ı güncelle
+                if (chatIdSnapshot != null && chatIdSnapshot.equals(sessionManager.getActiveChatId())) {
+                    sessionManager.setAILoading(false);
+                    sessionManager.addMessage(botMessage);
+
+                    // Ön yüz: UI Güncellemesi
+                    SessionManager.ChatCallback cb = sessionManager.getChatCallback();
+                    if (cb != null) {
+                        cb.onSuccess(botMessage);
+                    }
                 }
             }
 
             @Override
             public void onError(Throwable t) {
-                if (isAdded() && getActivity() != null) {
-                    requireActivity().runOnUiThread(() -> {
-                        // Loading balonunu sil (Varsa)
-                        if (adapter.getItemCount() > 0 && adapter.getLastItem().getId().equals("loading")) {
-                            adapter.removeLastItem();
-                        }
+                if (chatIdSnapshot != null && chatIdSnapshot.equals(sessionManager.getActiveChatId())) {
+                    sessionManager.setAILoading(false);
 
-                        String displayError = t.getMessage();
-                        if (displayError == null || displayError.isEmpty()) {
-                            displayError = getString(R.string.error_unknown);
-                        }
-
-                        Toast.makeText(getContext(), displayError, Toast.LENGTH_LONG).show();
-
-                        setLoadingState(false);
-                    });
+                    SessionManager.ChatCallback cb = sessionManager.getChatCallback();
+                    if (cb != null) {
+                        cb.onError(t);
+                    }
                 }
             }
         });
     }
 
     private void handleQuotaError(String message) {
-        if (!isAdded()) return;
+        sessionManager.setAILoading(false);
+        if (!isAdded())
+            return;
 
         if (adapter.getItemCount() > 0 && adapter.getLastItem().getId().equals("loading"))
             adapter.removeLastItem();
@@ -882,7 +948,8 @@ public class TextDoc extends Fragment {
     }
 
     private void startNewChatInternal() {
-        if (!isAdded()) return;
+        if (!isAdded())
+            return;
         Toast.makeText(getContext(), R.string.new_chat, Toast.LENGTH_SHORT).show();
         adapter.clearMessages();
         sessionManager.clearSession();
@@ -892,15 +959,23 @@ public class TextDoc extends Fragment {
         sessionManager.setActiveChatId(currentChatId);
         setLoadingState(false);
         updateEmptyState();
-        if (getArguments() != null) getArguments().remove("chatId");
+        if (getArguments() != null)
+            getArguments().remove("chatId");
     }
 
     private void restoreSessionToUI() {
         List<MessageModel> msgs = sessionManager.getActiveMessages();
         if (msgs != null && !msgs.isEmpty()) {
             adapter.setMessages(msgs);
-            scrollToBottom();
         }
+        if (sessionManager.isAILoading()) {
+            setLoadingState(true);
+            if (adapter.getItemCount() == 0 || !"loading".equals(adapter.getLastItem().getId())) {
+                MessageModel loadingMsg = new MessageModel("loading", "model", "...", "TEXT", Timestamp.now());
+                adapter.addMessage(loadingMsg);
+            }
+        }
+        scrollToBottom();
         updateEmptyState();
     }
 
@@ -910,7 +985,8 @@ public class TextDoc extends Fragment {
         dbManager.getMessages(chatId, new FirebaseDBManager.MessagesCallback() {
             @Override
             public void onSuccess(List<MessageModel> messages) {
-                if (!isAdded()) return;
+                if (!isAdded())
+                    return;
                 sessionManager.setActiveChatId(chatId);
                 sessionManager.setActiveMessages(messages);
                 adapter.setMessages(messages);
@@ -922,7 +998,8 @@ public class TextDoc extends Fragment {
 
             @Override
             public void onError(String error) {
-                if (!isAdded()) return;
+                if (!isAdded())
+                    return;
                 setLoadingState(false);
             }
         });
@@ -942,19 +1019,24 @@ public class TextDoc extends Fragment {
     }
 
     private void toggleAttachmentMenu() {
-        if (binding == null) return;
-        if (binding.layoutAttachments.getVisibility() == View.VISIBLE) hideAttachmentMenu();
-        else showAttachmentMenu();
+        if (binding == null)
+            return;
+        if (binding.layoutAttachments.getVisibility() == View.VISIBLE)
+            hideAttachmentMenu();
+        else
+            showAttachmentMenu();
     }
 
     private void showAttachmentMenu() {
-        if (binding == null) return;
+        if (binding == null)
+            return;
         hideKeyboard();
         binding.layoutAttachments.setVisibility(View.VISIBLE);
     }
 
     private void hideAttachmentMenu() {
-        if (binding == null || binding.layoutAttachments.getVisibility() != View.VISIBLE) return;
+        if (binding == null || binding.layoutAttachments.getVisibility() != View.VISIBLE)
+            return;
 
         binding.layoutAttachments.setVisibility(View.GONE);
 
@@ -962,7 +1044,8 @@ public class TextDoc extends Fragment {
     }
 
     private void hideKeyboard() {
-        if (getActivity() == null) return;
+        if (getActivity() == null)
+            return;
         View view = getActivity().getCurrentFocus();
         if (view != null) {
             InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -971,7 +1054,8 @@ public class TextDoc extends Fragment {
     }
 
     private void setLoadingState(boolean loading) {
-        if (binding == null) return;
+        if (binding == null)
+            return;
         this.isLoading = loading;
         binding.btnSend.setEnabled(!loading);
         binding.btnAttach.setEnabled(!loading);
@@ -985,7 +1069,8 @@ public class TextDoc extends Fragment {
     }
 
     private void updateEmptyState() {
-        if (binding == null) return;
+        if (binding == null)
+            return;
         if (adapter.getItemCount() == 0) {
             binding.layoutEmptyState.setVisibility(View.VISIBLE);
             binding.chatRecyclerView.setVisibility(View.GONE);
@@ -995,9 +1080,99 @@ public class TextDoc extends Fragment {
         }
     }
 
+    private void startTypewriterEffect(MessageModel botMessage, String fullText) {
+        if (!isAdded() || binding == null) return;
+
+        final String[] tokens = fullText.split("(?<=\\s)|(?=\\s)");
+        final int tokenCount = tokens.length;
+        if (tokenCount == 0) {
+            botMessage.setContent(fullText);
+            adapter.addMessage(botMessage);
+            setLoadingState(false);
+            return;
+        }
+
+        // Set active typewriter state for fragment lifecycle protection/restoration
+        activeTypewriterMessage = botMessage;
+        activeTypewriterFullText = fullText;
+
+        // Dynamic tokens per tick targeting ~3.0s total time for an ultra-premium, readable flow
+        final int tickDelay = 45; // ms
+        final int tokensPerTick = Math.max(1, tokenCount / 70);
+
+        int initialLimit = Math.min(tokensPerTick, tokenCount);
+        StringBuilder initialText = new StringBuilder();
+        for (int i = 0; i < initialLimit; i++) {
+            initialText.append(tokens[i]);
+        }
+
+        botMessage.setContent(initialText.toString());
+        adapter.addMessage(botMessage);
+        scrollToBottom();
+        setLoadingState(false);
+
+        if (activeTypewriterRunnable != null) {
+            typewriterHandler.removeCallbacks(activeTypewriterRunnable);
+        }
+
+        activeTypewriterRunnable = new Runnable() {
+            private int currentTokenIndex = initialLimit;
+            private final StringBuilder currentText = new StringBuilder(initialText.toString());
+
+            @Override
+            public void run() {
+                if (!isAdded() || binding == null) {
+                    activeTypewriterRunnable = null;
+                    return;
+                }
+
+                if (currentTokenIndex < tokenCount) {
+                    int limit = Math.min(currentTokenIndex + tokensPerTick, tokenCount);
+                    for (int i = currentTokenIndex; i < limit; i++) {
+                        currentText.append(tokens[i]);
+                    }
+                    currentTokenIndex = limit;
+
+                    botMessage.setContent(currentText.toString());
+
+                    int pos = adapter.getItemCount() - 1;
+                    if (pos >= 0) {
+                        adapter.notifyItemChanged(pos, "typing");
+                    }
+                    scrollToBottom();
+
+                    typewriterHandler.postDelayed(this, tickDelay);
+                } else {
+                    botMessage.setContent(fullText);
+                    int pos = adapter.getItemCount() - 1;
+                    if (pos >= 0) {
+                        adapter.notifyItemChanged(pos, "typing");
+                    }
+                    activeTypewriterRunnable = null;
+                    activeTypewriterMessage = null;
+                    activeTypewriterFullText = null;
+                }
+            }
+        };
+
+        typewriterHandler.postDelayed(activeTypewriterRunnable, tickDelay);
+    }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (typewriterHandler != null && activeTypewriterRunnable != null) {
+            typewriterHandler.removeCallbacks(activeTypewriterRunnable);
+            activeTypewriterRunnable = null;
+        }
+        if (activeTypewriterMessage != null && activeTypewriterFullText != null) {
+            activeTypewriterMessage.setContent(activeTypewriterFullText);
+            activeTypewriterMessage = null;
+            activeTypewriterFullText = null;
+        }
+        if (sessionManager != null) {
+            sessionManager.setChatCallback(null);
+        }
         binding = null;
     }
 }
