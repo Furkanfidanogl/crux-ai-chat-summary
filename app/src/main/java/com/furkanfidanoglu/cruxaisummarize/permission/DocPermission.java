@@ -1,17 +1,13 @@
 package com.furkanfidanoglu.cruxaisummarize.permission;
 
-import android.Manifest;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.OpenableColumns;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.furkanfidanoglu.cruxaisummarize.R;
@@ -23,7 +19,6 @@ public class DocPermission {
 
     private final Fragment fragment;
     private final DocCallback callback;
-    private final ActivityResultLauncher<String> requestPermissionLauncher;
     private final ActivityResultLauncher<String[]> docPickerLauncher;
 
     private static final long MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -36,19 +31,6 @@ public class DocPermission {
         this.fragment = fragment;
         this.callback = callback;
 
-        // 1. İzin İstemcisi
-        requestPermissionLauncher = fragment.registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
-                        openDocPicker();
-                    } else {
-                        Toast.makeText(fragment.getContext(), fragment.getString(R.string.perm_storage_denied), Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
-
-        // 2. Dosya Seçicisi
         docPickerLauncher = fragment.registerForActivityResult(
                 new ActivityResultContracts.OpenDocument(),
                 uri -> {
@@ -82,19 +64,7 @@ public class DocPermission {
     }
 
     public void checkPermissionsAndOpenPicker() {
-        Context context = fragment.getContext();
-        if (context == null) return;
-
-        // Android 13+ (Tiramisu) için izin gerekmez
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            openDocPicker();
-        } else {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                openDocPicker();
-            } else {
-                requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE);
-            }
-        }
+        openDocPicker();
     }
 
     private void openDocPicker() {

@@ -78,6 +78,7 @@ public class TextDoc extends Fragment {
     private Runnable activeTypewriterRunnable = null;
     private MessageModel activeTypewriterMessage = null;
     private String activeTypewriterFullText = null;
+    private boolean isUserScrollingUp = false;
 
     // Selected Media Data
     private byte[] selectedImageBytes = null;
@@ -215,10 +216,36 @@ public class TextDoc extends Fragment {
 
     private void setupRecyclerView() {
         LinearLayoutManager lm = new LinearLayoutManager(getContext());
-        lm.setStackFromEnd(true);
+        lm.setStackFromEnd(false);
         binding.chatRecyclerView.setLayoutManager(lm);
         binding.chatRecyclerView.setAdapter(adapter);
-        binding.chatRecyclerView.setOnTouchListener((v, event) -> false);
+        binding.chatRecyclerView.setItemAnimator(null);
+
+        binding.chatRecyclerView.addOnScrollListener(new androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull androidx.recyclerview.widget.RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                if (newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_DRAGGING || newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_SETTLING) {
+                    isUserScrollingUp = true;
+                } else if (newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE) {
+                    LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                    if (layoutManager != null) {
+                        int lastPos = layoutManager.findLastCompletelyVisibleItemPosition();
+                        if (lastPos >= adapter.getItemCount() - 1) {
+                            isUserScrollingUp = false;
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onScrolled(@NonNull androidx.recyclerview.widget.RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                if (dy < 0) {
+                    isUserScrollingUp = true;
+                }
+            }
+        });
     }
 
     private void setupSessionManagement(Bundle args) {
@@ -1064,8 +1091,20 @@ public class TextDoc extends Fragment {
     }
 
     private void scrollToBottom() {
+        isUserScrollingUp = false;
         if (binding != null && adapter.getItemCount() > 0)
-            binding.chatRecyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
+            binding.chatRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
+    }
+
+    private void scrollToBottomIfAtBottom() {
+        if (binding == null || adapter.getItemCount() == 0 || isUserScrollingUp) return;
+        LinearLayoutManager lm = (LinearLayoutManager) binding.chatRecyclerView.getLayoutManager();
+        if (lm != null) {
+            int lastVisible = lm.findLastVisibleItemPosition();
+            if (lastVisible >= adapter.getItemCount() - 2) {
+                binding.chatRecyclerView.scrollToPosition(adapter.getItemCount() - 1);
+            }
+        }
     }
 
     private void updateEmptyState() {
@@ -1139,14 +1178,14 @@ public class TextDoc extends Fragment {
                     if (pos >= 0) {
                         adapter.notifyItemChanged(pos, "typing");
                     }
-                    scrollToBottom();
+                    scrollToBottomIfAtBottom();
 
                     typewriterHandler.postDelayed(this, tickDelay);
                 } else {
                     botMessage.setContent(fullText);
                     int pos = adapter.getItemCount() - 1;
                     if (pos >= 0) {
-                        adapter.notifyItemChanged(pos, "typing");
+                        adapter.notifyItemChanged(pos);
                     }
                     activeTypewriterRunnable = null;
                     activeTypewriterMessage = null;

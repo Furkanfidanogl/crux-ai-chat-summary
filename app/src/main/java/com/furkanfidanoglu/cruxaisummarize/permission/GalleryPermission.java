@@ -1,20 +1,15 @@
 package com.furkanfidanoglu.cruxaisummarize.permission;
 
-import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.furkanfidanoglu.cruxaisummarize.R;
-import com.google.android.material.snackbar.Snackbar;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,7 +21,6 @@ public class GalleryPermission {
     private final ImageSelectionCallback callback;
 
     private ActivityResultLauncher<Intent> galleryLauncher;
-    private ActivityResultLauncher<String> permissionLauncher;
 
     private static final int MAX_FILE_SIZE = 50 * 1024 * 1024;
 
@@ -41,32 +35,7 @@ public class GalleryPermission {
     }
 
     public void checkPermissionsAndOpenGallery() {
-        Context context = fragment.getContext();
-        if (context == null) return;
-
-        String permission;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permission = Manifest.permission.READ_MEDIA_IMAGES;
-        } else {
-            permission = Manifest.permission.READ_EXTERNAL_STORAGE;
-        }
-
-        if (ContextCompat.checkSelfPermission(context, permission)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            if (fragment.shouldShowRequestPermissionRationale(permission)) {
-                Snackbar.make(fragment.requireView(),
-                                fragment.getString(R.string.perm_gallery_required),
-                                Snackbar.LENGTH_INDEFINITE)
-                        .setAction(fragment.getString(R.string.action_allow),
-                                v -> permissionLauncher.launch(permission))
-                        .show();
-            } else {
-                permissionLauncher.launch(permission);
-            }
-        } else {
-            openGallery();
-        }
+        openGallery();
     }
 
     private void openGallery() {
@@ -83,18 +52,6 @@ public class GalleryPermission {
                     if (result.getResultCode() == -1 && result.getData() != null) {
                         Uri uri = result.getData().getData();
                         if (uri != null) processImage(uri);
-                    }
-                });
-
-        permissionLauncher = fragment.registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
-                        openGallery();
-                    } else {
-                        Toast.makeText(fragment.getContext(),
-                                fragment.getString(R.string.perm_denied),
-                                Toast.LENGTH_SHORT).show();
                     }
                 });
     }

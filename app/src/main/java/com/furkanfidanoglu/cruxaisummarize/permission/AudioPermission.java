@@ -1,17 +1,13 @@
 package com.furkanfidanoglu.cruxaisummarize.permission;
 
-import android.Manifest;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.OpenableColumns;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.furkanfidanoglu.cruxaisummarize.R;
@@ -22,7 +18,6 @@ import java.io.InputStream;
 public class AudioPermission {
     private final Fragment fragment;
     private final AudioCallback callback;
-    private final ActivityResultLauncher<String> requestPermissionLauncher;
     private final ActivityResultLauncher<String> audioPickerLauncher;
 
     // 🔥 LİMİT: 10 MB (Byte cinsinden)
@@ -35,17 +30,6 @@ public class AudioPermission {
     public AudioPermission(Fragment fragment, AudioCallback callback) {
         this.fragment = fragment;
         this.callback = callback;
-
-        requestPermissionLauncher = fragment.registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
-                        openAudioPicker();
-                    } else {
-                        Toast.makeText(fragment.getContext(), fragment.getString(R.string.perm_audio_denied), Toast.LENGTH_SHORT).show();
-                    }
-                }
-        );
 
         audioPickerLauncher = fragment.registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
@@ -81,21 +65,7 @@ public class AudioPermission {
     }
 
     public void checkPermissionsAndOpenPicker() {
-        Context context = fragment.getContext();
-        if (context == null) return;
-
-        String permission;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permission = Manifest.permission.READ_MEDIA_AUDIO;
-        } else {
-            permission = Manifest.permission.READ_EXTERNAL_STORAGE;
-        }
-
-        if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
-            openAudioPicker();
-        } else {
-            requestPermissionLauncher.launch(permission);
-        }
+        openAudioPicker();
     }
 
     private void openAudioPicker() {

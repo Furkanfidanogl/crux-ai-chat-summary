@@ -15,7 +15,7 @@
         app:cardElevation="0dp"
         android:layout_marginStart="16dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/cardBotBubble">
+        app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
             android:id="@+id/imgBotAvatar"
@@ -51,8 +51,7 @@
             android:textSize="15sp"
             android:lineSpacingExtra="3dp"
             android:maxWidth="270dp"
-            android:fontFamily="sans-serif"
-            android:textIsSelectable="true"/>
+            android:fontFamily="sans-serif"/>
     </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

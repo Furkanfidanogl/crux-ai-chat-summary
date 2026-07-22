@@ -120,7 +120,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         if (!payloads.isEmpty()) {
             for (Object payload : payloads) {
                 if ("typing".equals(payload) && holder instanceof ModelViewHolder) {
-                    ((ModelViewHolder) holder).updateText(messageList.get(position));
+                    ((ModelViewHolder) holder).updateTextQuick(messageList.get(position));
                     return; // Processed partial update, skip full rebind
                 }
             }
@@ -286,25 +286,25 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             if ("loading".equals(message.getId())) {
                 tvMessage.setText(itemView.getContext().getString(R.string.status_typing));
             } else {
-                updateText(message);
+                updateTextFull(message);
             }
         }
 
-        void updateText(MessageModel message) {
+        void updateTextQuick(MessageModel message) {
             String content = message.getContent() != null ? message.getContent() : "";
             String cleanContent = content.replace("**", "");
             tvMessage.setText(cleanContent);
+        }
 
-            // 🔥🔥🔥 BOT İÇİN DÜZELTİLMİŞ LINK AYARI 🔥🔥🔥
+        void updateTextFull(MessageModel message) {
+            updateTextQuick(message);
+
             tvMessage.setAutoLinkMask(0);
-
-            // Patterns.WEB_URL yerine STRICT_URL_PATTERN
             Linkify.addLinks(tvMessage, STRICT_URL_PATTERN, "https://", null, SMART_URL_FILTER);
             Linkify.addLinks(tvMessage, Patterns.EMAIL_ADDRESS, "mailto:");
 
             tvMessage.setMovementMethod(LinkMovementMethod.getInstance());
             tvMessage.setLinkTextColor(Color.parseColor("#6C63FF"));
-            // 🔥🔥🔥 BİTİŞ 🔥🔥🔥
         }
     }
 }
