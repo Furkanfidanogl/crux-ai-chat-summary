@@ -11,6 +11,7 @@ import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.BillingResult;
+import com.android.billingclient.api.PendingPurchasesParams;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
@@ -44,9 +45,13 @@ public class BillingManager implements PurchasesUpdatedListener {
     }
 
     private BillingManager(Context context) {
+        PendingPurchasesParams pendingPurchasesParams = PendingPurchasesParams.newBuilder()
+                .enableOneTimeProducts()
+                .build();
+
         billingClient = BillingClient.newBuilder(context)
                 .setListener(this)
-                .enablePendingPurchases()
+                .enablePendingPurchases(pendingPurchasesParams)
                 .build();
         startConnection();
     }
@@ -99,17 +104,22 @@ public class BillingManager implements PurchasesUpdatedListener {
 
         billingClient.queryProductDetailsAsync(
                 queryProductDetailsParams,
-                (billingResult, productDetailsList) -> {
+                (billingResult, productDetailsResult) -> {
+                    // 🔴 Billing v8+: Liste, kapsayıcı nesneden alınıyor
+                    List<ProductDetails> productDetailsList = productDetailsResult.getProductDetailsList();
+
                     if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK &&
                             productDetailsList != null && !productDetailsList.isEmpty()) {
 
                         ProductDetails product = productDetailsList.get(0);
-                        String price = product.getSubscriptionOfferDetails()
-                                .get(0).getPricingPhases().getPricingPhaseList()
-                                .get(0).getFormattedPrice();
+                        if (product.getSubscriptionOfferDetails() != null && !product.getSubscriptionOfferDetails().isEmpty()) {
+                            String price = product.getSubscriptionOfferDetails()
+                                    .get(0).getPricingPhases().getPricingPhaseList()
+                                    .get(0).getFormattedPrice();
 
-                        if (callback != null) {
-                            callback.onPriceLoaded(price);
+                            if (callback != null) {
+                                callback.onPriceLoaded(price);
+                            }
                         }
                     }
                 }
@@ -130,24 +140,31 @@ public class BillingManager implements PurchasesUpdatedListener {
                         .build()))
                 .build();
 
-        billingClient.queryProductDetailsAsync(params, (billingResult, list) -> {
+        billingClient.queryProductDetailsAsync(params, (billingResult, productDetailsResult) -> {
+            // 🔴 Billing v8+: Liste, kapsayıcı nesneden alınıyor
+            List<ProductDetails> list = productDetailsResult.getProductDetailsList();
+
             if (list != null && !list.isEmpty()) {
                 ProductDetails productDetails = list.get(0);
-                String offerToken = productDetails.getSubscriptionOfferDetails().get(0).getOfferToken();
+                if (productDetails.getSubscriptionOfferDetails() != null && !productDetails.getSubscriptionOfferDetails().isEmpty()) {
+                    String offerToken = productDetails.getSubscriptionOfferDetails().get(0).getOfferToken();
 
-                ImmutableList<BillingFlowParams.ProductDetailsParams> productDetailsParamsList =
-                        ImmutableList.of(
-                                BillingFlowParams.ProductDetailsParams.newBuilder()
-                                        .setProductDetails(productDetails)
-                                        .setOfferToken(offerToken)
-                                        .build()
-                        );
+                    ImmutableList<BillingFlowParams.ProductDetailsParams> productDetailsParamsList =
+                            ImmutableList.of(
+                                    BillingFlowParams.ProductDetailsParams.newBuilder()
+                                            .setProductDetails(productDetails)
+                                            .setOfferToken(offerToken)
+                                            .build()
+                            );
 
-                BillingFlowParams billingFlowParams = BillingFlowParams.newBuilder()
-                        .setProductDetailsParamsList(productDetailsParamsList)
-                        .build();
+                    BillingFlowParams billingFlowParams = BillingFlowParams.newBuilder()
+                            .setProductDetailsParamsList(productDetailsParamsList)
+                            .build();
 
-                billingClient.launchBillingFlow(activity, billingFlowParams);
+                    billingClient.launchBillingFlow(activity, billingFlowParams);
+                } else {
+                    if (callback != null) callback.onError("Offer details not found.");
+                }
             } else {
                 if (callback != null) callback.onError("Product not found.");
             }
@@ -202,7 +219,6 @@ public class BillingManager implements PurchasesUpdatedListener {
             db.collection("users").document(auth.getCurrentUser().getUid())
                     .set(updates, SetOptions.merge())
                     .addOnSuccessListener(aVoid -> {
-                        // UI'ı tetikle
                         if (callback != null) callback.onPurchaseSuccess();
                     })
                     .addOnFailureListener(e -> {

@@ -7,18 +7,16 @@ plugins {
 
 android {
     namespace = "com.furkanfidanoglu.cruxaisummarize"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.furkanfidanoglu.cruxaisummarize"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 96
+        targetSdk = 36
+        versionCode = 108
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-
     }
 
     buildTypes {
@@ -59,7 +57,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
     implementation("com.google.firebase:firebase-functions")
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth") // Firebase Authentication
+    implementation("com.google.firebase:firebase-auth") // Firebase
     implementation("com.google.firebase:firebase-storage")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-config")
@@ -81,6 +79,9 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-auth:21.0.0") // Gmail Authentication
     implementation("com.google.android.play:app-update:2.1.0")
-    implementation("com.android.billingclient:billing:7.1.1")
+
+    // 🔴 7.1.1'den 8.0.0'a YÜKSELTİLDİ (Google Play Şartı - ktx eklentisiyle birlikte)
+    implementation("com.android.billingclient:billing-ktx:8.0.0")
+
     implementation("androidx.core:core-splashscreen:1.0.1")
 }
