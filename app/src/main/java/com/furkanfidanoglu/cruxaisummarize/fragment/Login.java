@@ -2,13 +2,12 @@ package com.furkanfidanoglu.cruxaisummarize.fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -16,13 +15,8 @@ import androidx.navigation.Navigation;
 
 import com.furkanfidanoglu.cruxaisummarize.R;
 import com.furkanfidanoglu.cruxaisummarize.databinding.FragmentLoginBinding;
+import com.furkanfidanoglu.cruxaisummarize.util.managers.GoogleAuthManager;
 import com.furkanfidanoglu.cruxaisummarize.view.HomeActivity;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -31,7 +25,7 @@ public class Login extends Fragment {
 
     private FragmentLoginBinding binding;
     private FirebaseAuth auth;
-    private GoogleSignInClient mGoogleSignInClient;
+    private CancellationSignal googleSignInCancellation;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -47,14 +41,6 @@ public class Login extends Fragment {
 
         auth = FirebaseAuth.getInstance();
 
-        // --- 1. GOOGLE AYARLARI ---
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
-                .requestEmail()
-                .build();
-        mGoogleSignInClient = GoogleSignIn.getClient(requireActivity(), gso);
-
-        // --- 2. GOOGLE BUTONU TIKLAMA (İsmi düzelttim: btnGoogleSign) ---
         binding.btnGoogleLogin.setOnClickListener(v -> signInWithGoogle());
 
         // Normal Giriş
@@ -69,60 +55,71 @@ public class Login extends Fragment {
         binding.tvForgotPassword.setOnClickListener(this::forgotPasswordFunc);
     }
 
-    // --- GOOGLE PENCERESİNİ AÇAR ---
     private void signInWithGoogle() {
-        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-        googleSignInLauncher.launch(signInIntent);
-    }
-
-    // --- GOOGLE SONUCUNU YAKALAR ---
-    private final ActivityResultLauncher<Intent> googleSignInLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == android.app.Activity.RESULT_OK) {
-                    Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
-                    try {
-                        GoogleSignInAccount account = task.getResult(ApiException.class);
-                        firebaseAuthWithGoogle(account.getIdToken());
-                    } catch (ApiException e) {
-                        Toast.makeText(requireContext(), getString(R.string.google_error) + " " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show();
+        setLoadingState(true);
+        if (googleSignInCancellation != null) googleSignInCancellation.cancel();
+        googleSignInCancellation = GoogleAuthManager.signIn(requireActivity(),
+                new GoogleAuthManager.SignInCallback() {
+                    @Override
+                    public void onIdToken(@NonNull String idToken) {
+                        googleSignInCancellation = null;
+                        firebaseAuthWithGoogle(idToken);
                     }
-                }
-            });
+
+                    @Override
+                    public void onCancelled() {
+                        googleSignInCancellation = null;
+                        if (binding != null) setLoadingState(false);
+                    }
+
+                    @Override
+                    public void onError(@NonNull Exception error) {
+                        googleSignInCancellation = null;
+                        if (binding != null) {
+                            setLoadingState(false);
+                            Toast.makeText(requireContext(), R.string.google_error, Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+    }
 
     // --- FIREBASE İLE GİRİŞ KONTROLÜ (İşte istediğin mantık burada) ---
     private void firebaseAuthWithGoogle(String idToken) {
-        setLoadingState(true);
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
 
         auth.signInWithCredential(credential)
                 .addOnSuccessListener(authResult -> {
 
                     // YENİ KULLANICI MI KONTROLÜ
-                    boolean isNewUser = authResult.getAdditionalUserInfo().isNewUser();
+                    boolean isNewUser = authResult.getAdditionalUserInfo() != null
+                            && authResult.getAdditionalUserInfo().isNewUser();
 
                     if (isNewUser) {
                         // ADIM 1: Yeni kullanıcı Login sayfasında Google ile giriş yaptı, ama kayıt olmamış.
                         // ADIM 2: Hesabı silmek yerine, SignUp'a yönlendir.
-                        auth.getCurrentUser().delete().addOnCompleteListener(task -> {
-                            // ADIM 3: Google ve Firebase'den çıkış yapıp temizliyoruz
-                            FirebaseAuth.getInstance().signOut();
-                            mGoogleSignInClient.signOut();
-
-                            setLoadingState(false);
-                            // Kullanıcıya kayıt olmasını söyle
-                            Toast.makeText(requireContext(), getString(R.string.error_login_new_user), Toast.LENGTH_LONG).show();
-                            // SignUp'a yönlendir
-                            Navigation.findNavController(requireView()).navigate(R.id.action_login_to_signUp);
-                        });
+                        if (auth.getCurrentUser() == null) {
+                            handleNewGoogleUser();
+                        } else {
+                            auth.getCurrentUser().delete().addOnCompleteListener(task -> handleNewGoogleUser());
+                        }
                     } else {
                         changeScreen();
                     }
                 })
                 .addOnFailureListener(e -> {
                     setLoadingState(false);
+                    Toast.makeText(requireContext(), R.string.google_error, Toast.LENGTH_LONG).show();
                 });
+    }
+
+    private void handleNewGoogleUser() {
+        auth.signOut();
+        GoogleAuthManager.clearCredentialState(requireContext(), () -> {
+            if (!isAdded() || binding == null) return;
+            setLoadingState(false);
+            Toast.makeText(requireContext(), R.string.error_login_new_user, Toast.LENGTH_LONG).show();
+            Navigation.findNavController(requireView()).navigate(R.id.action_login_to_signUp);
+        });
     }
 
     // --- DİĞER FONKSİYONLAR (AYNEN KORUNDU) ---
@@ -191,6 +188,10 @@ public class Login extends Fragment {
 
     @Override
     public void onDestroyView() {
+        if (googleSignInCancellation != null) {
+            googleSignInCancellation.cancel();
+            googleSignInCancellation = null;
+        }
         super.onDestroyView();
         binding = null;
     }

@@ -21,9 +21,7 @@ import com.furkanfidanoglu.cruxaisummarize.data.model.FirebaseDB;
 import com.furkanfidanoglu.cruxaisummarize.databinding.FragmentProfileBinding;
 import com.furkanfidanoglu.cruxaisummarize.util.managers.BillingManager;
 import com.furkanfidanoglu.cruxaisummarize.util.managers.FirebaseDBManager;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.furkanfidanoglu.cruxaisummarize.util.managers.GoogleAuthManager;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -158,28 +156,14 @@ public class Profile extends Fragment {
 
     public void btnLogout(View view) {
         prefs.edit().clear().apply();
-
         auth.signOut();
-
-        // 3. GOOGLE'DAN DA ÇIKIŞ YAP (YENİ EKLENEN KISIM)
-        // Bunu eklemezsen Google arkada "ben hala girişliyim" der, hesap seçtirmez.
-        try {
-            GoogleSignInOptions gso =
-                    new GoogleSignInOptions.Builder(
-                            GoogleSignInOptions.DEFAULT_SIGN_IN).build();
-
-            GoogleSignInClient googleSignInClient =
-                    GoogleSignIn.getClient(requireActivity(), gso);
-
-            googleSignInClient.signOut();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        startActivity(new Intent(getActivity(), com.furkanfidanoglu.cruxaisummarize.view.MainActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
-
-        Toast.makeText(getContext(), getString(R.string.msg_logged_out), Toast.LENGTH_SHORT).show();
+        Context context = requireContext();
+        GoogleAuthManager.clearCredentialState(context, () -> {
+            Intent intent = new Intent(context, com.furkanfidanoglu.cruxaisummarize.view.MainActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            context.startActivity(intent);
+            Toast.makeText(context, R.string.msg_logged_out, Toast.LENGTH_SHORT).show();
+        });
     }
 
     public void btnChangePassword(View view) {

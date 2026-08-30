@@ -19,3 +19,9 @@ local.properties
 functions/.env
 functions/node_modules/
 functions/.secret.local
+
+# Generated release artifacts and diagnostic output
+*.aab
+*.apk
+*.log
+temp_log.txt

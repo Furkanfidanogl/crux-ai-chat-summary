@@ -2,10 +2,10 @@ package com.furkanfidanoglu.cruxaisummarize.fragment;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.InputFilter;
 import android.view.LayoutInflater;
@@ -27,10 +27,10 @@ import com.furkanfidanoglu.cruxaisummarize.data.model.MessageModel;
 import com.furkanfidanoglu.cruxaisummarize.databinding.FragmentTextDocBinding;
 import com.furkanfidanoglu.cruxaisummarize.network.GeminiClient;
 import com.furkanfidanoglu.cruxaisummarize.permission.AudioPermission;
-import com.furkanfidanoglu.cruxaisummarize.permission.CameraPermission;
 import com.furkanfidanoglu.cruxaisummarize.permission.DataPermission;
 import com.furkanfidanoglu.cruxaisummarize.permission.DocPermission;
 import com.furkanfidanoglu.cruxaisummarize.permission.GalleryPermission;
+import com.furkanfidanoglu.cruxaisummarize.util.helpers.ContentUriUtil;
 import com.furkanfidanoglu.cruxaisummarize.util.managers.FirebaseDBManager;
 import com.furkanfidanoglu.cruxaisummarize.util.helpers.ImageUtil;
 import com.furkanfidanoglu.cruxaisummarize.util.managers.SessionManager;
@@ -46,14 +46,12 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
-import static android.app.Activity.RESULT_OK;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class TextDoc extends Fragment {
     private FragmentTextDocBinding binding;
@@ -81,68 +79,40 @@ public class TextDoc extends Fragment {
     private boolean isUserScrollingUp = false;
 
     // Selected Media Data
-    private byte[] selectedImageBytes = null;
+    private byte[] selectedImageBytes;
     private Uri currentPhotoUri;
-    private byte[] selectedAudioBytes = null;
-    private byte[] selectedDocBytes = null;
-    private String selectedFileName = null;
-    private String extractedDocText = null;
-    private String extractedDataText = null;
+    private Uri selectedMediaUri;
+    private String selectedMediaType;
+    private long selectedMediaSize = -1L;
+    private String selectedFileName;
+    private String extractedDocText;
+    private String extractedDataText;
+    private ExecutorService mediaExecutor;
 
-    private final ActivityResultLauncher<Intent> cameraLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (result.getResultCode() == RESULT_OK) {
-                    Uri photoUri = currentPhotoUri;
-                    if (photoUri == null && getContext() != null) {
-                        String uriStr = getContext().getSharedPreferences("CameraPrefs", Context.MODE_PRIVATE)
-                                .getString("currentPhotoUri", null);
-                        if (uriStr != null) {
-                            photoUri = Uri.parse(uriStr);
-                        }
-                    }
-                    if (photoUri != null && isAdded()) {
-                        if (binding != null) {
-                            binding.etMessage.setHint(getString(R.string.msg_processing_photo));
-                        }
-                        final Uri finalPhotoUri = photoUri;
-                        new Thread(() -> {
-                            try {
-                                InputStream inputStream = requireActivity().getContentResolver()
-                                        .openInputStream(finalPhotoUri);
-                                ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-                                int bufferSize = 1024;
-                                byte[] buffer = new byte[bufferSize];
-                                int len;
-                                while ((len = inputStream.read(buffer)) != -1) {
-                                    byteBuffer.write(buffer, 0, len);
-                                }
-                                byte[] fullBytes = byteBuffer.toByteArray();
+    private final ActivityResultLauncher<Uri> cameraLauncher = registerForActivityResult(
+            new ActivityResultContracts.TakePicture(),
+            success -> {
+                Uri photoUri = restoreCurrentPhotoUri();
+                clearStoredPhotoUri();
+                if (photoUri == null) return;
 
-                                byte[] processed = ImageUtil.processImage(fullBytes);
+                long capturedSize = isAdded()
+                        ? ContentUriUtil.getMetadata(requireContext(), photoUri).size
+                        : -1L;
+                if (Boolean.TRUE.equals(success) || capturedSize > 0L) {
+                    processSelectedImage(photoUri, true);
+                } else if (isAdded()) {
+                    requireContext().getContentResolver().delete(photoUri, null, null);
+                }
+            });
 
-                                if (isAdded()) {
-                                    requireActivity().runOnUiThread(() -> {
-                                        resetMediaSelections();
-                                        selectedImageBytes = processed;
-                                        if (binding != null) {
-                                            binding.etMessage.setHint(getString(R.string.msg_photo_captured));
-                                        }
-                                        Toast.makeText(getContext(), getString(R.string.msg_photo_ready),
-                                                Toast.LENGTH_SHORT).show();
-                                    });
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                if (isAdded()) {
-                                    requireActivity().runOnUiThread(() -> {
-                                        Toast.makeText(getContext(), getString(R.string.error_read_file),
-                                                Toast.LENGTH_SHORT).show();
-                                    });
-                                }
-                            }
-                        }).start();
-                    }
+    private final ActivityResultLauncher<String> cameraPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            granted -> {
+                if (Boolean.TRUE.equals(granted)) {
+                    openCamera();
+                } else if (isAdded()) {
+                    Toast.makeText(requireContext(), R.string.perm_denied, Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -158,6 +128,7 @@ public class TextDoc extends Fragment {
         geminiClient = GeminiClient.getInstance(requireContext());
         dbManager = FirebaseDBManager.getInstance();
         sessionManager = SessionManager.getInstance();
+        mediaExecutor = Executors.newSingleThreadExecutor();
 
         sessionManager.setChatCallback(new SessionManager.ChatCallback() {
             @Override
@@ -272,28 +243,14 @@ public class TextDoc extends Fragment {
     }
 
     private void setupPermissions() {
-        textDocPermission = new GalleryPermission(this, (imageBytes, uri) -> {
-            if (imageBytes != null && binding != null) {
-                binding.etMessage.setHint(getString(R.string.msg_processing_image));
-                new Thread(() -> {
-                    byte[] processed = ImageUtil.processImage(imageBytes);
-                    if (isAdded()) {
-                        requireActivity().runOnUiThread(() -> {
-                            resetMediaSelections();
-                            selectedImageBytes = processed;
-                            binding.etMessage.setHint(getString(R.string.hint_type_message));
-                            Toast.makeText(getContext(), getString(R.string.msg_image_selected), Toast.LENGTH_SHORT)
-                                    .show();
-                        });
-                    }
-                }).start();
-            }
-        });
+        textDocPermission = new GalleryPermission(this, uri -> processSelectedImage(uri, false));
 
-        audioPermission = new AudioPermission(this, (audioBytes, fileName) -> {
-            if (audioBytes != null && binding != null) {
+        audioPermission = new AudioPermission(this, (uri, fileName, fileSize) -> {
+            if (uri != null && binding != null) {
                 resetMediaSelections();
-                selectedAudioBytes = audioBytes;
+                selectedMediaUri = uri;
+                selectedMediaType = "AUDIO";
+                selectedMediaSize = fileSize;
                 selectedFileName = fileName;
 
                 binding.etMessage.setHint(fileName);
@@ -303,14 +260,8 @@ public class TextDoc extends Fragment {
             }
         });
 
-        docPermission = new DocPermission(this, (docBytes, fileName) -> {
-            if (docBytes != null && binding != null) {
-
-                if (docBytes.length > 8 * 1024 * 1024) {
-                    Toast.makeText(getContext(), getString(R.string.msg_file_large), Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
+        docPermission = new DocPermission(this, (uri, fileName, fileSize) -> {
+            if (uri != null && binding != null) {
                 resetMediaSelections();
                 selectedFileName = fileName;
                 binding.etMessage.setHint(fileName);
@@ -319,30 +270,26 @@ public class TextDoc extends Fragment {
                 // Eğer DOCX ise Apache POI ile okumak için Thread başlatıyoruz
                 if (fileName.toLowerCase().endsWith(".docx")) {
                     Toast.makeText(getContext(), getString(R.string.msg_reading_word), Toast.LENGTH_SHORT).show();
-                    new Thread(() -> {
-                        String text = readDocxFile(docBytes);
+                    Context appContext = requireContext().getApplicationContext();
+                    mediaExecutor.execute(() -> {
+                        String text = readDocxFile(appContext, uri);
 
                         if (isAdded() && getActivity() != null) {
                             getActivity().runOnUiThread(
                                     () -> handleParsedTextResult(text, getString(R.string.msg_word_ready)));
                         }
-                    }).start();
+                    });
                 } else {
-                    // PDF veya TXT ise byte olarak tutuyoruz, işlenmeye hazır bekliyor
-                    selectedDocBytes = docBytes;
+                    selectedMediaUri = uri;
+                    selectedMediaType = "DOC";
+                    selectedMediaSize = fileSize;
                     Toast.makeText(getContext(), fileName, Toast.LENGTH_SHORT).show();
                 }
             }
         });
 
-        dataPermission = new DataPermission(this, (fileBytes, fileName) -> {
-            if (fileBytes != null && binding != null) {
-                // 🔥 LİMİT GÜNCELLEMESİ: 512 KB (512 * 1024)
-                if (fileBytes.length > 512 * 1024) {
-                    Toast.makeText(getContext(), getString(R.string.msg_dataset_large), Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
+        dataPermission = new DataPermission(this, (uri, fileName, fileSize) -> {
+            if (uri != null && binding != null) {
                 resetMediaSelections();
                 selectedFileName = fileName;
                 binding.etMessage.setHint(fileName);
@@ -350,12 +297,13 @@ public class TextDoc extends Fragment {
 
                 Toast.makeText(getContext(), getString(R.string.msg_reading_data), Toast.LENGTH_SHORT).show();
 
-                new Thread(() -> {
+                Context appContext = requireContext().getApplicationContext();
+                mediaExecutor.execute(() -> {
                     String text = null;
                     if (fileName.toLowerCase().endsWith(".csv")) {
-                        text = readCsvFile(fileBytes);
+                        text = readCsvFile(appContext, uri);
                     } else if (fileName.toLowerCase().endsWith(".xlsx") || fileName.toLowerCase().endsWith(".xls")) {
-                        text = readExcelFile(fileBytes);
+                        text = readExcelFile(appContext, uri);
                     }
 
                     if (text != null && !text.isEmpty()) {
@@ -374,10 +322,42 @@ public class TextDoc extends Fragment {
                             requireActivity().runOnUiThread(() -> Toast
                                     .makeText(getContext(), getString(R.string.error_read_file), Toast.LENGTH_SHORT)
                                     .show());
+                            }
                         }
-                    }
-                }).start();
+                });
             }
+        });
+    }
+
+    private void processSelectedImage(Uri uri, boolean fromCamera) {
+        if (uri == null || binding == null || mediaExecutor == null) return;
+        binding.etMessage.setHint(getString(fromCamera
+                ? R.string.msg_processing_photo
+                : R.string.msg_processing_image));
+
+        Context appContext = requireContext().getApplicationContext();
+        mediaExecutor.execute(() -> {
+            byte[] processed = ImageUtil.processImage(appContext, uri);
+            if (!isAdded()) return;
+
+            requireActivity().runOnUiThread(() -> {
+                if (binding == null) return;
+                if (processed == null || processed.length == 0) {
+                    binding.etMessage.setHint(getString(R.string.hint_type_message));
+                    Toast.makeText(requireContext(), R.string.error_read_file, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                resetMediaSelections();
+                selectedImageBytes = processed;
+                binding.etMessage.setHint(getString(fromCamera
+                        ? R.string.msg_photo_captured
+                        : R.string.hint_type_message));
+                Toast.makeText(requireContext(), fromCamera
+                                ? R.string.msg_photo_ready
+                                : R.string.msg_image_selected,
+                        Toast.LENGTH_SHORT).show();
+            });
         });
     }
 
@@ -407,7 +387,7 @@ public class TextDoc extends Fragment {
             hideAttachmentMenu();
             String message = binding.etMessage.getText().toString().trim();
 
-            boolean hasMedia = selectedImageBytes != null || selectedAudioBytes != null || selectedDocBytes != null;
+            boolean hasMedia = selectedImageBytes != null || selectedMediaUri != null;
             boolean hasTextData = extractedDocText != null || extractedDataText != null;
 
             if (message.isEmpty() && !hasMedia && !hasTextData)
@@ -425,103 +405,38 @@ public class TextDoc extends Fragment {
 
         binding.menuGallery.setOnClickListener(v -> {
             hideAttachmentMenu();
-            dbManager.checkImageLimit(new FirebaseDBManager.LimitCallback() {
-                @Override
-                public void onSuccess() {
-                    textDocPermission.checkPermissionsAndOpenGallery();
-                }
-
-                @Override
-                public void onLimitReached(String message) {
-                    Toast.makeText(getContext(), R.string.limit_reached_msg_free, Toast.LENGTH_SHORT).show();
-                }
-            });
+            textDocPermission.checkPermissionsAndOpenGallery();
         });
 
         binding.menuDocument.setOnClickListener(v -> {
             hideAttachmentMenu();
-            dbManager.checkImageLimit(new FirebaseDBManager.LimitCallback() {
-                @Override
-                public void onSuccess() {
-                    docPermission.checkPermissionsAndOpenPicker();
-                }
-
-                @Override
-                public void onLimitReached(String message) {
-                    Toast.makeText(getContext(), R.string.limit_reached_msg_free, Toast.LENGTH_SHORT).show();
-                }
-            });
+            docPermission.checkPermissionsAndOpenPicker();
         });
 
         binding.menuAudio.setOnClickListener(v -> {
             hideAttachmentMenu();
-            dbManager.checkImageLimit(new FirebaseDBManager.LimitCallback() {
-                @Override
-                public void onSuccess() {
-                    audioPermission.checkPermissionsAndOpenPicker();
-                }
-
-                @Override
-                public void onLimitReached(String message) {
-                    Toast.makeText(getContext(), R.string.limit_reached_msg_free, Toast.LENGTH_SHORT).show();
-                }
-            });
+            audioPermission.checkPermissionsAndOpenPicker();
         });
 
         binding.menuData.setOnClickListener(v -> {
             hideAttachmentMenu();
-            dbManager.checkImageLimit(new FirebaseDBManager.LimitCallback() {
-                @Override
-                public void onSuccess() {
-                    dataPermission.checkPermissionsAndOpenPicker();
-                }
-
-                @Override
-                public void onLimitReached(String message) {
-                    Toast.makeText(getContext(), R.string.limit_reached_msg_free, Toast.LENGTH_SHORT).show();
-                }
-            });
+            dataPermission.checkPermissionsAndOpenPicker();
         });
 
         binding.menuCamera.setOnClickListener(v -> {
             hideAttachmentMenu();
-
-            dbManager.checkImageLimit(new FirebaseDBManager.LimitCallback() {
-                @Override
-                public void onSuccess() {
-                    // Hakkı varsa izin kontrolü yap ve kamerayı aç
-                    if (CameraPermission.hasCameraPermission(getContext())) {
-                        openCamera();
-                    } else {
-                        requestPermissions(new String[] { android.Manifest.permission.CAMERA },
-                                CameraPermission.CAMERA_PERMISSION_CODE);
-                    }
-                }
-
-                @Override
-                public void onLimitReached(String message) {
-                    Toast.makeText(getContext(), R.string.limit_reached_msg_free, Toast.LENGTH_SHORT).show();
-                }
-            });
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                    requireContext(), android.Manifest.permission.CAMERA)
+                    == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                openCamera();
+            } else {
+                cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA);
+            }
         });
 
         binding.menuLink.setOnClickListener(v -> {
             hideAttachmentMenu();
-
-            // 🔥 Önce Limit Kontrolü
-            dbManager.checkImageLimit(new FirebaseDBManager.LimitCallback() {
-                @Override
-                public void onSuccess() {
-                    // Hakkı varsa Link penceresini aç
-                    showLinkBottomSheet();
-                }
-
-                @Override
-                public void onLimitReached(String message) {
-                    // Hakkı yoksa "Limit Doldu" mesajı ver, pencereyi açma
-                    Toast.makeText(getContext(), R.string.limit_reached_msg_free, Toast.LENGTH_SHORT).show();
-                }
-            });
+            showLinkBottomSheet();
         });
 
         binding.btnNewChat.setOnClickListener(v -> startNewChatInternal());
@@ -551,13 +466,16 @@ public class TextDoc extends Fragment {
     }
 
     private void openCamera() {
-        if (getActivity() == null)
-            return;
+        if (!isAdded()) return;
+
         ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.TITLE, "New Picture");
-        values.put(MediaStore.Images.Media.DESCRIPTION, "From Camera");
-        currentPhotoUri = requireActivity().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                values);
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, "crux_" + System.currentTimeMillis() + ".jpg");
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            values.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Crux AI");
+        }
+        currentPhotoUri = requireContext().getContentResolver()
+                .insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
 
         if (currentPhotoUri == null) {
             Toast.makeText(getContext(), getString(R.string.msg_camera_error), Toast.LENGTH_SHORT).show();
@@ -572,25 +490,30 @@ public class TextDoc extends Fragment {
                     .apply();
         }
 
-        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, currentPhotoUri);
         try {
-            cameraLauncher.launch(cameraIntent);
+            cameraLauncher.launch(currentPhotoUri);
         } catch (Exception e) {
+            requireContext().getContentResolver().delete(currentPhotoUri, null, null);
+            clearStoredPhotoUri();
             Toast.makeText(getContext(), getString(R.string.msg_camera_error), Toast.LENGTH_SHORT).show();
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-            @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == CameraPermission.CAMERA_PERMISSION_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                openCamera();
-            } else {
-                Toast.makeText(getContext(), getString(R.string.perm_denied), Toast.LENGTH_SHORT).show();
-            }
+    private Uri restoreCurrentPhotoUri() {
+        if (currentPhotoUri != null) return currentPhotoUri;
+        if (!isAdded()) return null;
+        String stored = requireContext().getSharedPreferences("CameraPrefs", Context.MODE_PRIVATE)
+                .getString("currentPhotoUri", null);
+        return stored == null ? null : Uri.parse(stored);
+    }
+
+    private void clearStoredPhotoUri() {
+        currentPhotoUri = null;
+        if (isAdded()) {
+            requireContext().getSharedPreferences("CameraPrefs", Context.MODE_PRIVATE)
+                    .edit()
+                    .remove("currentPhotoUri")
+                    .apply();
         }
     }
 
@@ -616,17 +539,15 @@ public class TextDoc extends Fragment {
         if (selectedImageBytes != null) {
             userMessage = new MessageModel(tempMsgId, "user", messageText, "IMAGE", Timestamp.now());
             userMessage.setImage(selectedImageBytes);
-        } else if (selectedAudioBytes != null) {
+        } else if (selectedMediaUri != null && "AUDIO".equals(selectedMediaType)) {
             String fName = (selectedFileName != null) ? selectedFileName : "Audio";
             String finalContent = messageText.isEmpty() ? fName : messageText + "\n" + fName;
             userMessage = new MessageModel(tempMsgId, "user", finalContent, "AUDIO", Timestamp.now());
-            userMessage.setAudio(selectedAudioBytes);
             userMessage.setFileName(selectedFileName);
-        } else if (selectedDocBytes != null) {
+        } else if (selectedMediaUri != null && "DOC".equals(selectedMediaType)) {
             String fName = (selectedFileName != null) ? selectedFileName : "Document";
             String finalContent = messageText.isEmpty() ? fName : messageText + "\n" + fName;
             userMessage = new MessageModel(tempMsgId, "user", finalContent, "DOC", Timestamp.now());
-            userMessage.setDoc(selectedDocBytes);
             userMessage.setFileName(selectedFileName);
         } else if (extractedDocText != null) {
             String fName = (selectedFileName != null) ? selectedFileName : "Word Document";
@@ -659,27 +580,33 @@ public class TextDoc extends Fragment {
             final byte[] media = selectedImageBytes;
             selectedImageBytes = null;
             checkLimitAndUpload(userMessage, media, "IMAGE");
-        } else if (selectedAudioBytes != null) {
-            final byte[] media = selectedAudioBytes;
-            selectedAudioBytes = null;
+        } else if (selectedMediaUri != null && "AUDIO".equals(selectedMediaType)) {
+            Uri mediaUri = selectedMediaUri;
+            long mediaSize = selectedMediaSize;
+            selectedMediaUri = null;
+            selectedMediaType = null;
+            selectedMediaSize = -1L;
             selectedFileName = null;
-            checkLimitAndUpload(userMessage, media, "AUDIO");
-        } else if (selectedDocBytes != null) {
-            final byte[] media = selectedDocBytes;
-            selectedDocBytes = null;
+            checkLimitAndUpload(userMessage, mediaUri, mediaSize, "AUDIO");
+        } else if (selectedMediaUri != null && "DOC".equals(selectedMediaType)) {
+            Uri mediaUri = selectedMediaUri;
+            long mediaSize = selectedMediaSize;
+            selectedMediaUri = null;
+            selectedMediaType = null;
+            selectedMediaSize = -1L;
             selectedFileName = null;
-            checkLimitAndUpload(userMessage, media, "DOC");
+            checkLimitAndUpload(userMessage, mediaUri, mediaSize, "DOC");
         } else if (extractedDocText != null) {
             String fullPrompt = getString(R.string.msg_docx_prompt) + extractedDocText + "\n\nUser: " + messageText;
             extractedDocText = null;
             selectedFileName = null;
-            sendMessageToGeminiInternal(userMessage, null, "TEXT", true, fullPrompt);
+            checkLimitAndSendExtractedText(userMessage, fullPrompt);
         } else if (extractedDataText != null) {
             String fullPrompt = getString(R.string.msg_data_prompt) + extractedDataText + "\n\nUSER QUESTION: "
                     + messageText;
             extractedDataText = null;
             selectedFileName = null;
-            sendMessageToGeminiInternal(userMessage, null, "TEXT", true, fullPrompt);
+            checkLimitAndSendExtractedText(userMessage, fullPrompt);
         } else {
             if (isLinkRequest) {
                 dbManager.checkImageLimit(new FirebaseDBManager.LimitCallback() {
@@ -695,7 +622,7 @@ public class TextDoc extends Fragment {
                     }
                 });
             } else {
-                sendMessageToGeminiInternal(userMessage, null, "TEXT", false, null);
+                sendMessageToGeminiInternal(userMessage, 0L, "TEXT", false, null);
             }
         }
     }
@@ -730,9 +657,10 @@ public class TextDoc extends Fragment {
                 lower.contains(".tr");
     }
 
-    private String readDocxFile(byte[] fileBytes) {
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(fileBytes);
-                XWPFDocument document = new XWPFDocument(inputStream)) {
+    private String readDocxFile(Context context, Uri uri) {
+        try (InputStream inputStream = context.getContentResolver().openInputStream(uri);
+                XWPFDocument document = inputStream == null ? null : new XWPFDocument(inputStream)) {
+            if (document == null) return null;
             StringBuilder sb = new StringBuilder();
             for (XWPFParagraph para : document.getParagraphs()) {
                 sb.append(para.getText()).append("\n");
@@ -743,10 +671,11 @@ public class TextDoc extends Fragment {
         }
     }
 
-    private String readCsvFile(byte[] fileBytes) {
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(fileBytes);
-                BufferedReader reader = new BufferedReader(
+    private String readCsvFile(Context context, Uri uri) {
+        try (InputStream inputStream = context.getContentResolver().openInputStream(uri);
+                BufferedReader reader = inputStream == null ? null : new BufferedReader(
                         new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            if (reader == null) return null;
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -758,9 +687,10 @@ public class TextDoc extends Fragment {
         }
     }
 
-    private String readExcelFile(byte[] fileBytes) {
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(fileBytes);
-                Workbook workbook = new XSSFWorkbook(inputStream)) {
+    private String readExcelFile(Context context, Uri uri) {
+        try (InputStream inputStream = context.getContentResolver().openInputStream(uri);
+                Workbook workbook = inputStream == null ? null : new XSSFWorkbook(inputStream)) {
+            if (workbook == null) return null;
             StringBuilder sb = new StringBuilder();
             Sheet sheet = workbook.getSheetAt(0);
             for (Row row : sheet) {
@@ -794,7 +724,7 @@ public class TextDoc extends Fragment {
                         String promptPrefix = getString(R.string.msg_web_prompt);
                         String finalPrompt = promptPrefix + userMessage.getContent() + "\n\nCONTENT:\n" + cleanContent;
                         adapter.removeLoadingItem();
-                        sendMessageToGeminiInternal(userMessage, null, "LINK", true, finalPrompt);
+                        sendMessageToGeminiInternal(userMessage, 0L, "LINK", true, finalPrompt);
                     }
                 });
             }
@@ -835,6 +765,46 @@ public class TextDoc extends Fragment {
         });
     }
 
+    private void checkLimitAndSendExtractedText(MessageModel userMessage, String fullPrompt) {
+        dbManager.checkImageLimit(new FirebaseDBManager.LimitCallback() {
+            @Override
+            public void onSuccess() {
+                typewriterHandler.post(() -> {
+                    if (isAdded()) {
+                        sendMessageToGeminiInternal(userMessage, 0L, "TEXT", true, fullPrompt);
+                    }
+                });
+            }
+
+            @Override
+            public void onLimitReached(String message) {
+                typewriterHandler.post(() -> {
+                    if (isAdded()) {
+                        handleQuotaError(message);
+                    }
+                });
+            }
+        });
+    }
+
+    private void checkLimitAndUpload(MessageModel userMessage, Uri mediaUri, long mediaSize, String type) {
+        dbManager.checkImageLimit(new FirebaseDBManager.LimitCallback() {
+            @Override
+            public void onSuccess() {
+                typewriterHandler.post(() -> {
+                    if (isAdded()) uploadMediaAndSend(userMessage, mediaUri, mediaSize, type);
+                });
+            }
+
+            @Override
+            public void onLimitReached(String message) {
+                typewriterHandler.post(() -> {
+                    if (isAdded()) handleQuotaError(message);
+                });
+            }
+        });
+    }
+
     // --- UPLOAD GÜVENLİK AYARI ---
     private void uploadMediaAndSend(MessageModel userMessage, byte[] mediaBytes, String type) {
         FirebaseDBManager.StorageCallback callback = new FirebaseDBManager.StorageCallback() {
@@ -850,7 +820,7 @@ public class TextDoc extends Fragment {
 
                 // Ve Gemini'yi tetikle (Burada isAdded() kontrolü YOK, arka planda da
                 // çalışmalı)
-                sendMessageToGeminiInternal(userMessage, mediaBytes, type, true, null);
+                sendMessageToGeminiInternal(userMessage, mediaBytes.length, type, true, null);
             }
 
             @Override
@@ -878,7 +848,33 @@ public class TextDoc extends Fragment {
         }
     }
 
-    private void sendMessageToGeminiInternal(MessageModel userMessage, byte[] mediaBytes, String mediaType,
+    private void uploadMediaAndSend(MessageModel userMessage, Uri mediaUri, long mediaSize, String type) {
+        String extension = extensionFor(userMessage.getFileName(), type);
+        dbManager.uploadUriFileToStorage(mediaUri, extension, new FirebaseDBManager.StorageCallback() {
+            @Override
+            public void onSuccess(String mediaUrl) {
+                if ("AUDIO".equals(type)) userMessage.setAudioUrl(mediaUrl);
+                else if ("DOC".equals(type)) userMessage.setDocUrl(mediaUrl);
+                sendMessageToGeminiInternal(userMessage, Math.max(0L, mediaSize), type, true, null);
+            }
+
+            @Override
+            public void onError(String error) {
+                typewriterHandler.post(() -> {
+                    if (isAdded()) handleQuotaError(error);
+                });
+            }
+        });
+    }
+
+    private String extensionFor(String fileName, String type) {
+        if (fileName != null && fileName.contains(".")) {
+            return fileName.substring(fileName.lastIndexOf('.') + 1);
+        }
+        return "DOC".equals(type) ? "pdf" : "mp3";
+    }
+
+    private void sendMessageToGeminiInternal(MessageModel userMessage, long mediaSize, String mediaType,
             boolean consumeQuota, @Nullable String manualPrompt) {
 
         if (isAdded() && binding != null) {
@@ -917,7 +913,7 @@ public class TextDoc extends Fragment {
                 dbManager.updateChatPreview(chatIdSnapshot, response, "TEXT", Timestamp.now());
 
                 if (consumeQuota) {
-                    long size = (mediaBytes != null) ? mediaBytes.length : contentToSend.length();
+                    long size = mediaSize > 0L ? mediaSize : contentToSend.length();
                     dbManager.incrementUsage(mediaType, size);
                 }
 
@@ -1034,8 +1030,9 @@ public class TextDoc extends Fragment {
 
     private void resetMediaSelections() {
         selectedImageBytes = null;
-        selectedAudioBytes = null;
-        selectedDocBytes = null;
+        selectedMediaUri = null;
+        selectedMediaType = null;
+        selectedMediaSize = -1L;
         selectedFileName = null;
         extractedDocText = null;
         extractedDataText = null;
@@ -1211,6 +1208,10 @@ public class TextDoc extends Fragment {
         }
         if (sessionManager != null) {
             sessionManager.setChatCallback(null);
+        }
+        if (mediaExecutor != null) {
+            mediaExecutor.shutdownNow();
+            mediaExecutor = null;
         }
         binding = null;
     }

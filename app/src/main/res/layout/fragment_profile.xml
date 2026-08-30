@@ -232,7 +232,6 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:background="?attr/selectableItemBackground"
-                        android:onClick="btnManagePlan"
                         android:padding="6dp"
                         android:text="@string/action_manage_plan"
                         android:textColor="#6C63FF"
@@ -391,7 +390,6 @@
                         android:clickable="true"
                         android:focusable="true"
                         android:gravity="center_vertical"
-                        android:onClick="btnWebSite"
                         android:orientation="horizontal"
                         android:padding="12dp">
 
@@ -421,7 +419,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
                 android:layout_marginTop="10dp"
-                android:onClick="btnLogout"
                 android:text="@string/action_logout"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
@@ -435,7 +432,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:background="?attr/selectableItemBackground"
-                android:onClick="btnDeleteAccount"
                 android:padding="10dp"
                 android:text="@string/action_delete_account"
                 android:textColor="#F44336"

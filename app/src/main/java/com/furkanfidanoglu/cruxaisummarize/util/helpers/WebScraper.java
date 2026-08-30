@@ -8,7 +8,15 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-public class WebScraper {
+import java.net.InetAddress;
+import java.net.URI;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public final class WebScraper {
+    private static final ExecutorService NETWORK_EXECUTOR = Executors.newFixedThreadPool(2);
+
+    private WebScraper() {}
 
     public interface ScrapeCallback {
         void onSuccess(String cleanContent);
@@ -19,7 +27,7 @@ public class WebScraper {
         // UI Thread Handler'ı (Çökme Önleyici)
         Handler mainHandler = new Handler(Looper.getMainLooper());
 
-        new Thread(() -> {
+        NETWORK_EXECUTOR.execute(() -> {
             try {
                 // 🛡️ 1. GÜVENLİK DUVARI: URL ve Mail Kontrolü
                 if (rawUrl == null || rawUrl.trim().isEmpty()) {
@@ -40,12 +48,23 @@ public class WebScraper {
                 // Protokol eksikse ekle
                 if (!url.startsWith("http://") && !url.startsWith("https://")) {
                     url = "https://" + url;
+                } else if (url.startsWith("http://")) {
+                    url = "https://" + url.substring("http://".length());
+                }
+
+                URI parsed = URI.create(url);
+                String host = parsed.getHost();
+                if (host == null || isPrivateHost(host)) {
+                    mainHandler.post(() -> callback.onError("Invalid Web URL"));
+                    return;
                 }
 
                 // 🌐 2. BAĞLANTI (Jsoup)
                 Document doc = Jsoup.connect(url)
                         .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
                         .timeout(10000)
+                        .maxBodySize(1_000_000)
+                        .followRedirects(true)
                         .get();
 
                 // 🧹 3. TEMİZLİK
@@ -103,6 +122,24 @@ public class WebScraper {
                 // Hata durumunda da Main Thread
                 mainHandler.post(() -> callback.onError(e.getMessage()));
             }
-        }).start();
+        });
+    }
+
+    private static boolean isPrivateHost(String host) {
+        if ("localhost".equalsIgnoreCase(host) || host.toLowerCase().endsWith(".local")) return true;
+        try {
+            for (InetAddress address : InetAddress.getAllByName(host)) {
+                if (address.isAnyLocalAddress()
+                        || address.isLoopbackAddress()
+                        || address.isLinkLocalAddress()
+                        || address.isSiteLocalAddress()
+                        || address.isMulticastAddress()) {
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {
+            return true;
+        }
+        return false;
     }
 }

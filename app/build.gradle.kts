@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services")
-    kotlin("plugin.serialization") version "2.0.21"
     alias(libs.plugins.androidx.navigation.safeargs)
 }
 
@@ -13,7 +12,7 @@ android {
         applicationId = "com.furkanfidanoglu.cruxaisummarize"
         minSdk = 26
         targetSdk = 36
-        versionCode = 112
+        versionCode = 117
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -21,7 +20,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -54,7 +54,7 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
-    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.18.0"))
     implementation("com.google.firebase:firebase-functions")
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth") // Firebase
@@ -64,24 +64,24 @@ dependencies {
 
     // Firebase App Check (Play Integrity) - Güvenlik Kalkanı
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
-    implementation("com.google.firebase:firebase-appcheck-debug")
+    debugImplementation("com.google.firebase:firebase-appcheck-debug")
 
-    val nav_version = "2.8.8"
-    implementation("androidx.navigation:navigation-fragment:${nav_version}")
-    implementation("androidx.navigation:navigation-ui:${nav_version}")
+    implementation(libs.navigation.fragment)
+    implementation(libs.navigation.ui)
 
     implementation("com.github.bumptech.glide:glide:4.16.0") //Resim yüklemek için
 
     implementation("org.jsoup:jsoup:1.17.2") //HTML okumak için
 
     implementation("org.apache.poi:poi-ooxml:5.2.3") // Excel okumak için
-    implementation("org.apache.poi:poi:5.2.3") // Excel okumak için
 
-    implementation("com.google.android.gms:play-services-auth:21.0.0") // Gmail Authentication
+    // Credential Manager + Sign in with Google (legacy GoogleSignIn SDK replacement)
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services.auth)
+    implementation(libs.googleid)
     implementation("com.google.android.play:app-update:2.1.0")
 
-    // 🔴 7.1.1'den 8.0.0'a YÜKSELTİLDİ (Google Play Şartı - ktx eklentisiyle birlikte)
-    implementation("com.android.billingclient:billing-ktx:8.0.0")
+    implementation("com.android.billingclient:billing:8.0.0")
 
     implementation("androidx.core:core-splashscreen:1.0.1")
 }

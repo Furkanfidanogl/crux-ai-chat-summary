@@ -1,5 +1,6 @@
 package com.furkanfidanoglu.cruxaisummarize.util.managers;
 
+import android.net.Uri;
 import android.util.Log;
 
 import com.furkanfidanoglu.cruxaisummarize.data.model.FirebaseDB;
@@ -90,6 +91,29 @@ public class FirebaseDBManager {
         ref.putBytes(fileBytes)
                 .addOnSuccessListener(
                         task -> ref.getDownloadUrl().addOnSuccessListener(uri -> callback.onSuccess(uri.toString())))
+                .addOnFailureListener(e -> callback.onError(e.getMessage()));
+    }
+
+    /** Uploads Storage Access Framework content as a stream instead of duplicating it in RAM. */
+    public void uploadUriFileToStorage(Uri fileUri, String extension, StorageCallback callback) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || fileUri == null) {
+            callback.onError("User or file error.");
+            return;
+        }
+
+        String safeExtension = extension == null
+                ? "bin"
+                : extension.replaceAll("[^A-Za-z0-9]", "").toLowerCase(Locale.US);
+        if (safeExtension.isEmpty()) safeExtension = "bin";
+
+        String path = "uploads/" + user.getUid() + "/" + UUID.randomUUID() + "." + safeExtension;
+        StorageReference ref = storage.getReference().child(path);
+        ref.putFile(fileUri)
+                .addOnSuccessListener(
+                        task -> ref.getDownloadUrl()
+                                .addOnSuccessListener(uri -> callback.onSuccess(uri.toString()))
+                                .addOnFailureListener(e -> callback.onError(e.getMessage())))
                 .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 

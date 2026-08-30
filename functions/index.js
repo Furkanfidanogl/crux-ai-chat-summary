@@ -12,6 +12,12 @@ const MAX_OUTPUT_TOKENS = 4096;
 const TEMPERATURE = 0.4;
 const TOP_P = 0.9;
 const DEFAULT_SYSTEM_PROMPT = "You are CruxAI. Help the user safely.";
+const MAX_TEXT_CHARS = 50_000;
+const MAX_HISTORY_ITEMS = 24;
+const MAX_HISTORY_TEXT_CHARS = 8_000;
+const MAX_MEDIA_BYTES = 10 * 1024 * 1024;
+const MAX_BASE64_CHARS = 14_000_000;
+const ALLOWED_MEDIA_TYPES = new Set(["IMAGE", "AUDIO", "DOC"]);
 
 // ─── REMOTE CONFIG CACHE ────────────────────────────────────────
 let cachedSystemPrompt = null;
@@ -60,12 +66,12 @@ function buildContents(text, mediaBase64, mediaType, mimeType, history) {
 
   // 1. Add chat history (if any)
   if (Array.isArray(history) && history.length > 0) {
-    for (const msg of history) {
-      if (!msg.role || !msg.text) continue;
+    for (const msg of history.slice(-MAX_HISTORY_ITEMS)) {
+      if (!msg || typeof msg.text !== "string" || msg.text.trim().length === 0) continue;
       const role = msg.role === "model" ? "model" : "user";
       contents.push({
         role,
-        parts: [{ text: msg.text }],
+        parts: [{ text: msg.text.slice(0, MAX_HISTORY_TEXT_CHARS) }],
       });
     }
   }
@@ -97,6 +103,38 @@ function buildContents(text, mediaBase64, mediaType, mimeType, history) {
   return contents;
 }
 
+function parseOwnedStorageUrl(mediaUrl, uid) {
+  let parsed;
+  try {
+    parsed = new URL(mediaUrl);
+  } catch (_) {
+    throw new HttpsError("invalid-argument", "Invalid media URL.");
+  }
+
+  if (parsed.protocol !== "https:" || parsed.hostname !== "firebasestorage.googleapis.com") {
+    throw new HttpsError("permission-denied", "Only Crux AI Storage media is accepted.");
+  }
+
+  const match = parsed.pathname.match(/^\/v0\/b\/([^/]+)\/o\/(.+)$/);
+  if (!match) {
+    throw new HttpsError("invalid-argument", "Invalid Storage URL.");
+  }
+
+  const bucketName = decodeURIComponent(match[1]);
+  const path = decodeURIComponent(match[2]);
+  const projectId = process.env.GCLOUD_PROJECT || admin.app().options.projectId;
+  const allowedBuckets = new Set([
+    `${projectId}.appspot.com`,
+    `${projectId}.firebasestorage.app`,
+  ]);
+
+  if (!allowedBuckets.has(bucketName) || !path.startsWith(`uploads/${uid}/`)) {
+    throw new HttpsError("permission-denied", "Media does not belong to this user.");
+  }
+
+  return { bucketName, path };
+}
+
 // ─── MAIN CLOUD FUNCTION ────────────────────────────────────────
 exports.processGemini = onCall(
   {
@@ -104,7 +142,8 @@ exports.processGemini = onCall(
     timeoutSeconds: 60,
     maxInstances: 50,
     secrets: [geminiApiKey],
-    // enforceAppCheck DEVRE DIŞI — App Check token sorunu UNAUTHENTICATED hatasına yol açıyordu
+    // Keep disabled until Play Integrity tokens are verified on a production-signed build.
+    // Auth, ownership checks and strict payload limits below remain mandatory.
     enforceAppCheck: false,
   },
   async (request) => {
@@ -120,14 +159,26 @@ exports.processGemini = onCall(
       throw new HttpsError("unauthenticated", "Authentication required.");
     }
 
-    const { text, mediaBase64, mediaUrl, mediaType, mimeType, history } = request.data;
+    const data = request.data && typeof request.data === "object" ? request.data : {};
+    const text = typeof data.text === "string" ? data.text.slice(0, MAX_TEXT_CHARS) : "";
+    const mediaBase64 = typeof data.mediaBase64 === "string" ? data.mediaBase64 : null;
+    const mediaUrl = typeof data.mediaUrl === "string" ? data.mediaUrl : null;
+    const mediaType = typeof data.mediaType === "string" ? data.mediaType : null;
+    const mimeType = typeof data.mimeType === "string" ? data.mimeType.slice(0, 100) : null;
+    const history = Array.isArray(data.history) ? data.history : [];
 
     // ── Validation ──
-    const hasText = text && text.trim().length > 0;
+    const hasText = text.trim().length > 0;
     const hasMedia = (mediaBase64 || mediaUrl) && mediaType;
 
     if (!hasText && !hasMedia) {
       throw new HttpsError("invalid-argument", "No content provided.");
+    }
+    if (mediaType && !ALLOWED_MEDIA_TYPES.has(mediaType)) {
+      throw new HttpsError("invalid-argument", "Unsupported media type.");
+    }
+    if (mediaBase64 && mediaBase64.length > MAX_BASE64_CHARS) {
+      throw new HttpsError("invalid-argument", "Media payload too large.");
     }
 
     try {
@@ -143,50 +194,24 @@ exports.processGemini = onCall(
 
       if (mediaUrl && mediaType) {
         try {
-          if (mediaUrl.includes("/o/")) {
-            const pathEncoded = mediaUrl.split("/o/")[1].split("?")[0];
-            const path = decodeURIComponent(pathEncoded);
-            console.log(`Downloading from storage path: ${path}`);
-            let bucket;
-            if (mediaUrl.includes("/v0/b/")) {
-              const bucketName = mediaUrl.split("/v0/b/")[1].split("/o/")[0];
-              bucket = admin.storage().bucket(bucketName);
-            } else {
-              bucket = admin.storage().bucket();
-            }
-            const [fileBuffer] = await bucket.file(path).download();
-            finalMediaBase64 = fileBuffer.toString("base64");
-
-            if (!resolvedMimeType) {
-              if (path.endsWith(".jpg") || path.endsWith(".jpeg")) resolvedMimeType = "image/jpeg";
-              else if (path.endsWith(".png")) resolvedMimeType = "image/png";
-              else if (path.endsWith(".gif")) resolvedMimeType = "image/gif";
-              else if (path.endsWith(".webp")) resolvedMimeType = "image/webp";
-              else if (path.endsWith(".pdf")) resolvedMimeType = "application/pdf";
-              else if (path.endsWith(".mp3")) resolvedMimeType = "audio/mp3";
-              else if (path.endsWith(".wav")) resolvedMimeType = "audio/wav";
-              else if (path.endsWith(".m4a")) resolvedMimeType = "audio/m4a";
-              else if (path.endsWith(".txt")) resolvedMimeType = "text/plain";
-              else resolvedMimeType = "application/octet-stream";
-            }
-          } else {
-            console.log(`Downloading from external URL: ${mediaUrl}`);
-            const res = await fetch(mediaUrl);
-            if (!res.ok) throw new Error(`Fetch failed with status ${res.status}`);
-            const arrayBuffer = await res.arrayBuffer();
-            finalMediaBase64 = Buffer.from(arrayBuffer).toString("base64");
-            if (!resolvedMimeType) {
-              resolvedMimeType = res.headers.get("content-type") || "application/octet-stream";
-            }
+          const { bucketName, path } = parseOwnedStorageUrl(mediaUrl, request.auth.uid);
+          const file = admin.storage().bucket(bucketName).file(path);
+          const [metadata] = await file.getMetadata();
+          const fileSize = Number(metadata.size || 0);
+          if (!Number.isFinite(fileSize) || fileSize <= 0 || fileSize > MAX_MEDIA_BYTES) {
+            throw new HttpsError("invalid-argument", "Media file is empty or too large.");
           }
+          const [fileBuffer] = await file.download();
+          finalMediaBase64 = fileBuffer.toString("base64");
+          resolvedMimeType = metadata.contentType || resolveMimeType(mediaType, null);
         } catch (err) {
+          if (err instanceof HttpsError) throw err;
           console.error("Error downloading media resource:", err);
-          throw new HttpsError("internal", `Failed to retrieve media file: ${err.message}`);
+          throw new HttpsError("internal", "Failed to retrieve media file.");
         }
       }
 
-      // ── Payload size guard (10MB base64 ≈ 7.5MB binary) ──
-      if (finalMediaBase64 && finalMediaBase64.length > 14_000_000) {
+      if (finalMediaBase64 && finalMediaBase64.length > MAX_BASE64_CHARS) {
         throw new HttpsError("invalid-argument", "Media payload too large (max ~10MB).");
       }
 
@@ -211,7 +236,10 @@ exports.processGemini = onCall(
       });
 
       // ── Extract text from response ──
-      const responseText = response?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const responseText = response?.candidates?.[0]?.content?.parts
+        ?.map((part) => typeof part.text === "string" ? part.text : "")
+        .join("")
+        .trim();
 
       if (!responseText || responseText.trim().length === 0) {
         // Check for safety block

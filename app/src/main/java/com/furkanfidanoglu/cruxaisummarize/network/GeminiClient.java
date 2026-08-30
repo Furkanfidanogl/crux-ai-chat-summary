@@ -1,6 +1,7 @@
 package com.furkanfidanoglu.cruxaisummarize.network;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.util.Base64;
 import android.util.Log;
 
@@ -14,8 +15,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class GeminiClient {
@@ -26,9 +28,9 @@ public final class GeminiClient {
     private static final String FUNCTION_NAME = "processGemini";
 
     private static GeminiClient instance;
-    private final Context context;
+    private final Resources resources;
     private final FirebaseFunctions functions;
-    private final Executor executor = Executors.newSingleThreadExecutor();
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private static final AtomicInteger activeRequests = new AtomicInteger(0);
 
     // In-memory chat history for context
@@ -42,7 +44,7 @@ public final class GeminiClient {
     }
 
     private GeminiClient(Context context) {
-        this.context = context;
+        this.resources = context.getResources();
         this.functions = FirebaseFunctions.getInstance();
     }
 
@@ -89,14 +91,12 @@ public final class GeminiClient {
             String mediaUrl,
             String mediaType,
             GeminiCallback callback) {
-        if (activeRequests.get() >= MAX_CONCURRENT_REQUESTS) {
-            callback.onError(new GeminiException(
+        if (!tryAcquireRequestSlot()) {
+            notifyError(callback, new GeminiException(
                     GeminiErrorType.OVERLOADED,
-                    context.getString(R.string.system_busy)));
+                    resources.getString(R.string.system_busy)));
             return;
         }
-
-        activeRequests.incrementAndGet();
         sendWithRetry(userText, null, mediaUrl, mediaType, callback, 0, System.currentTimeMillis());
     }
 
@@ -105,15 +105,21 @@ public final class GeminiClient {
             byte[] mediaBytes,
             String mediaType,
             GeminiCallback callback) {
-        if (activeRequests.get() >= MAX_CONCURRENT_REQUESTS) {
-            callback.onError(new GeminiException(
+        if (!tryAcquireRequestSlot()) {
+            notifyError(callback, new GeminiException(
                     GeminiErrorType.OVERLOADED,
-                    context.getString(R.string.system_busy)));
+                    resources.getString(R.string.system_busy)));
             return;
         }
-
-        activeRequests.incrementAndGet();
         sendWithRetry(userText, mediaBytes, null, mediaType, callback, 0, System.currentTimeMillis());
+    }
+
+    private boolean tryAcquireRequestSlot() {
+        while (true) {
+            int current = activeRequests.get();
+            if (current >= MAX_CONCURRENT_REQUESTS) return false;
+            if (activeRequests.compareAndSet(current, current + 1)) return true;
+        }
     }
 
     private void sendWithRetry(
@@ -127,9 +133,9 @@ public final class GeminiClient {
         // Timeout guard: 30 seconds (server has 60s, but we give client 30s)
         if (System.currentTimeMillis() - startTime > 30000) {
             activeRequests.decrementAndGet();
-            callback.onError(new GeminiException(
+            notifyError(callback, new GeminiException(
                     GeminiErrorType.TIMEOUT,
-                    context.getString(R.string.request_timeout)));
+                    resources.getString(R.string.request_timeout)));
             return;
         }
 
@@ -160,9 +166,9 @@ public final class GeminiClient {
                 // Fall back to text-only if we have text
                 if (userText == null || userText.trim().isEmpty()) {
                     activeRequests.decrementAndGet();
-                    callback.onError(new GeminiException(
+                    notifyError(callback, new GeminiException(
                             GeminiErrorType.UNKNOWN,
-                            context.getString(R.string.error_media_too_large)));
+                            resources.getString(R.string.error_media_too_large)));
                     return;
                 }
                 // Remove media from payload, send text only
@@ -183,8 +189,6 @@ public final class GeminiClient {
         functions.getHttpsCallable(FUNCTION_NAME)
                 .call(payload)
                 .addOnSuccessListener(executor, result -> {
-                    activeRequests.decrementAndGet();
-
                     try {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> data = (Map<String, Object>) result.getData();
@@ -205,28 +209,30 @@ public final class GeminiClient {
                                 chatHistory.add(modelEntry);
                             }
 
-                            callback.onSuccess(response);
+                            activeRequests.decrementAndGet();
+                            notifySuccess(callback, response);
                         } else if (retryCount < MAX_RETRIES) {
                             scheduleRetry(userText, mediaBytes, mediaUrl, mediaType, callback, retryCount + 1, startTime);
                         } else {
-                            callback.onError(new GeminiException(
+                            activeRequests.decrementAndGet();
+                            notifyError(callback, new GeminiException(
                                      GeminiErrorType.EMPTY_RESPONSE,
-                                    context.getString(R.string.error_empty)));
+                                    resources.getString(R.string.error_empty)));
                         }
                     } catch (Exception e) {
+                        activeRequests.decrementAndGet();
                         Log.e(TAG, "Response parsing error: " + e.getMessage());
-                        callback.onError(new GeminiException(
+                        notifyError(callback, new GeminiException(
                                 GeminiErrorType.UNKNOWN,
-                                context.getString(R.string.error_unknown)));
+                                resources.getString(R.string.error_unknown)));
                     }
                 })
                 .addOnFailureListener(executor, e -> {
-                    activeRequests.decrementAndGet();
-
                     if (shouldRetry(e) && retryCount < MAX_RETRIES) {
                         scheduleRetry(userText, mediaBytes, mediaUrl, mediaType, callback, retryCount + 1, startTime);
                     } else {
-                        callback.onError(mapToFriendlyException(e));
+                        activeRequests.decrementAndGet();
+                        notifyError(callback, mapToFriendlyException(e));
                     }
                 });
     }
@@ -268,17 +274,10 @@ public final class GeminiClient {
         long delay = nextRetry * 2000L; // 2s, 4s, 6s
         Log.w(TAG, "Scheduling retry " + nextRetry + " in " + delay + "ms");
 
-        executor.execute(() -> {
-            try {
-                Thread.sleep(delay);
-                sendWithRetry(userText, mediaBytes, mediaUrl, mediaType, callback, nextRetry, startTime);
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-                callback.onError(new GeminiException(
-                        GeminiErrorType.UNKNOWN,
-                        context.getString(R.string.error_unknown)));
-            }
-        });
+        executor.schedule(
+                () -> sendWithRetry(userText, mediaBytes, mediaUrl, mediaType, callback, nextRetry, startTime),
+                delay,
+                TimeUnit.MILLISECONDS);
     }
 
     private boolean shouldRetry(Throwable t) {
@@ -306,43 +305,43 @@ public final class GeminiClient {
             switch (ffe.getCode()) {
                 case UNAUTHENTICATED:
                     return new GeminiException(GeminiErrorType.AUTH,
-                            context.getString(R.string.error_auth));
+                            resources.getString(R.string.error_auth));
 
                 case PERMISSION_DENIED:
                     if (serverMsg.contains("safety")) {
                         return new GeminiException(GeminiErrorType.SAFETY,
-                                context.getString(R.string.error_safety));
+                                resources.getString(R.string.error_safety));
                     }
                     if (serverMsg.contains("recitation")) {
                         return new GeminiException(GeminiErrorType.SAFETY,
-                                context.getString(R.string.error_recitation));
+                                resources.getString(R.string.error_recitation));
                     }
                     return new GeminiException(GeminiErrorType.AUTH,
-                            context.getString(R.string.error_auth));
+                            resources.getString(R.string.error_auth));
 
                 case RESOURCE_EXHAUSTED:
                     return new GeminiException(GeminiErrorType.QUOTA,
-                            context.getString(R.string.error_429));
+                            resources.getString(R.string.error_429));
 
                 case UNAVAILABLE:
                     return new GeminiException(GeminiErrorType.NETWORK,
-                            context.getString(R.string.error_503));
+                            resources.getString(R.string.error_503));
 
                 case DEADLINE_EXCEEDED:
                     return new GeminiException(GeminiErrorType.TIMEOUT,
-                            context.getString(R.string.error_timeout));
+                            resources.getString(R.string.error_timeout));
 
                 case NOT_FOUND:
                     return new GeminiException(GeminiErrorType.NETWORK,
-                            context.getString(R.string.error_404));
+                            resources.getString(R.string.error_404));
 
                 case INTERNAL:
                     if (serverMsg.contains("empty")) {
                         return new GeminiException(GeminiErrorType.EMPTY_RESPONSE,
-                                context.getString(R.string.error_empty));
+                                resources.getString(R.string.error_empty));
                     }
                     return new GeminiException(GeminiErrorType.UNKNOWN,
-                            context.getString(R.string.error_unknown));
+                            resources.getString(R.string.error_unknown));
 
                 default:
                     break;
@@ -355,20 +354,39 @@ public final class GeminiClient {
 
         if (msg.contains("network") || msg.contains("connect") || msg.contains("unreachable")) {
             return new GeminiException(GeminiErrorType.NETWORK,
-                    context.getString(R.string.error_internet));
+                    resources.getString(R.string.error_internet));
         }
 
         return new GeminiException(GeminiErrorType.UNKNOWN,
-                context.getString(R.string.error_unknown));
+                resources.getString(R.string.error_unknown));
     }
 
     private String safeLower(String s) {
         return s == null ? "" : s.toLowerCase(Locale.US);
     }
 
+    private void notifySuccess(GeminiCallback callback, String response) {
+        try {
+            callback.onSuccess(response);
+        } catch (RuntimeException callbackError) {
+            Log.e(TAG, "Success callback failed", callbackError);
+        }
+    }
+
+    private void notifyError(GeminiCallback callback, Throwable error) {
+        try {
+            callback.onError(error);
+        } catch (RuntimeException callbackError) {
+            Log.e(TAG, "Error callback failed", callbackError);
+        }
+    }
+
     // ─── STATIC HELPERS ─────────────────────────────────────────
-    public static void clearInstance() {
-        instance = null;
+    public static synchronized void clearInstance() {
+        if (instance != null) {
+            instance.executor.shutdownNow();
+            instance = null;
+        }
     }
 
     public static void resetRequestCounter() {

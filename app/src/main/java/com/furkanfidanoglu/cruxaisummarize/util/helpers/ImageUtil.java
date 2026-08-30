@@ -1,156 +1,128 @@
 package com.furkanfidanoglu.cruxaisummarize.util.helpers;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.net.Uri;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.exifinterface.media.ExifInterface;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
-public class ImageUtil {
+/** Memory-bounded image decoding for camera and Photo Picker content URIs. */
+public final class ImageUtil {
+    private static final int MAX_DIMENSION = 2048;
+    private static final int COMPRESSION_QUALITY = 84;
 
-    // 🔧 ULTRA AYARLAR:
-    // 1920px: Metin okuma (OCR) için en ideal çözünürlük (Full HD genişliği).
-    // Daha düşüğü yazıları bozar, daha yükseği gereksiz yavaştır.
-    private static final int MAX_WIDTH = 1920;
-    private static final int MAX_HEIGHT = 1920;
-
-    private static final int COMPRESSION_QUALITY = 85;
+    private ImageUtil() {}
 
     /**
-     * Devasa resimleri (50MB+) bile RAM'i patlatmadan işler.
-     * Hem hızlıdır hem de Gemini için en net görüntüyü üretir.
+     * Opens the source as streams, samples before decode and only returns the compact JPEG result.
+     * The original image is never copied into a full-size byte array.
      */
-    public static byte[] processImage(byte[] originalBytes) {
-        if (originalBytes == null) return null;
-
-        ByteArrayOutputStream outputStream = null;
-        Bitmap finalBitmap = null;
-        Bitmap tempBitmap = null;
+    @Nullable
+    public static byte[] processImage(@NonNull Context context, @NonNull Uri uri) {
+        Bitmap decoded = null;
+        Bitmap oriented = null;
 
         try {
-            // 1. YÖN BİLGİSİNİ AL (Yan çekilmiş fotolar düzelmeli)
-            int orientation = getOrientation(originalBytes);
+            BitmapFactory.Options bounds = new BitmapFactory.Options();
+            bounds.inJustDecodeBounds = true;
+            try (InputStream stream = context.getContentResolver().openInputStream(uri)) {
+                if (stream == null) return null;
+                BitmapFactory.decodeStream(stream, null, bounds);
+            }
 
-            // 2. BOYUTLARI ÖLÇ (Resmi RAM'e yüklemeden sadece kenarlarını oku)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null;
+
             BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inJustDecodeBounds = true;
-            BitmapFactory.decodeByteArray(originalBytes, 0, originalBytes.length, options);
-
-            // 3. OPTİMİZE ÖRNEKLEME (InSampleSize hesapla)
-            options.inSampleSize = calculateInSampleSize(options, MAX_WIDTH, MAX_HEIGHT);
-
-            // 4. GÜVENLİ YÜKLEME AYARLARI
-            options.inJustDecodeBounds = false;
-            // 🔥 KRİTİK NOKTA: RGB_565 kullanarak RAM kullanımını yarıya indiriyoruz.
-            // 50MB dosyalarda "Out Of Memory" hatasını engelleyen sihir budur.
-            // İnsan gözü farkı anlamaz ama metinler hala nettir.
+            options.inSampleSize = calculateInSampleSize(bounds, MAX_DIMENSION, MAX_DIMENSION);
             options.inPreferredConfig = Bitmap.Config.RGB_565;
+            options.inDither = true;
 
-            // 5. RESMİ YÜKLE
-            tempBitmap = BitmapFactory.decodeByteArray(originalBytes, 0, originalBytes.length, options);
-
-            if (tempBitmap == null) return originalBytes; // Yükleme başarısızsa orijinali dön
-
-            // 6. DÖNDÜR (Varsa)
-            finalBitmap = rotateBitmap(tempBitmap, orientation);
-
-            // Memory Leak önlemi: tempBitmap artık gereksizse sil.
-            if (finalBitmap != tempBitmap) {
-                tempBitmap.recycle();
+            try (InputStream stream = context.getContentResolver().openInputStream(uri)) {
+                if (stream == null) return null;
+                decoded = BitmapFactory.decodeStream(stream, null, options);
             }
+            if (decoded == null) return null;
 
-            // 7. SIKIŞTIR VE ÇIKTI ÜRET
-            outputStream = new ByteArrayOutputStream();
-            // JPEG formatı metin içeren fotolar için en performanslısıdır.
-            finalBitmap.compress(Bitmap.CompressFormat.JPEG, COMPRESSION_QUALITY, outputStream);
+            int orientation = readOrientation(context, uri);
+            oriented = applyOrientation(decoded, orientation);
 
-            return outputStream.toByteArray();
-
-        } catch (OutOfMemoryError e) {
-            // Eğer telefon çok eskiyse ve yine de hafıza bittiyse;
-            // Sistemi temizle ve risk almamak için orijinal veriyi (veya null) dön.
-            System.gc();
-            e.printStackTrace();
-            return originalBytes;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return originalBytes;
-        } finally {
-            try {
-                if (outputStream != null) outputStream.close();
-                // Bitmap işimiz bitti, RAM'den hemen atalım.
-                if (finalBitmap != null && !finalBitmap.isRecycled()) {
-                    finalBitmap.recycle();
+            try (ByteArrayOutputStream output = new ByteArrayOutputStream(512 * 1024)) {
+                if (!oriented.compress(Bitmap.CompressFormat.JPEG, COMPRESSION_QUALITY, output)) {
+                    return null;
                 }
-                // Çöp toplayıcıya "Müsait olduğunda gel" sinyali çakalım.
-                System.gc();
-            } catch (IOException e) {
-                e.printStackTrace();
+                return output.toByteArray();
             }
+        } catch (IOException | RuntimeException | OutOfMemoryError ignored) {
+            return null;
+        } finally {
+            if (oriented != null && oriented != decoded && !oriented.isRecycled()) oriented.recycle();
+            if (decoded != null && !decoded.isRecycled()) decoded.recycle();
         }
     }
 
-    // ---------------- YARDIMCI METODLAR ----------------
-
-    private static int getOrientation(byte[] data) {
-        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
-            ExifInterface exif = new ExifInterface(inputStream);
+    private static int readOrientation(Context context, Uri uri) {
+        try (InputStream stream = context.getContentResolver().openInputStream(uri)) {
+            if (stream == null) return ExifInterface.ORIENTATION_NORMAL;
+            ExifInterface exif = new ExifInterface(stream);
             return exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException ignored) {
             return ExifInterface.ORIENTATION_NORMAL;
         }
     }
 
-    private static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
+    private static Bitmap applyOrientation(Bitmap bitmap, int orientation) {
         Matrix matrix = new Matrix();
-        boolean needsRotation = false;
-
         switch (orientation) {
-            case ExifInterface.ORIENTATION_ROTATE_90:
-                matrix.postRotate(90);
-                needsRotation = true;
+            case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                matrix.setScale(-1f, 1f);
                 break;
             case ExifInterface.ORIENTATION_ROTATE_180:
-                matrix.postRotate(180);
-                needsRotation = true;
+                matrix.setRotate(180f);
+                break;
+            case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+                matrix.setScale(1f, -1f);
+                break;
+            case ExifInterface.ORIENTATION_TRANSPOSE:
+                matrix.setRotate(90f);
+                matrix.postScale(-1f, 1f);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                matrix.setRotate(90f);
+                break;
+            case ExifInterface.ORIENTATION_TRANSVERSE:
+                matrix.setRotate(-90f);
+                matrix.postScale(-1f, 1f);
                 break;
             case ExifInterface.ORIENTATION_ROTATE_270:
-                matrix.postRotate(270);
-                needsRotation = true;
+                matrix.setRotate(-90f);
                 break;
-        }
-
-        if (!needsRotation) {
-            return bitmap;
+            default:
+                return bitmap;
         }
 
         try {
-            // Yeni döndürülmüş bitmap oluştur
             return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-        } catch (OutOfMemoryError e) {
-            // Döndürürken hafıza yetmezse orijinal (yamuk) haliyle devam et, hiç yoktan iyidir.
+        } catch (RuntimeException | OutOfMemoryError ignored) {
             return bitmap;
         }
     }
 
-    private static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
-        // Resmin ham boyutları
-        final int height = options.outHeight;
-        final int width = options.outWidth;
-        int inSampleSize = 1;
-
-        if (height > reqHeight || width > reqWidth) {
-            final int halfHeight = height / 2;
-            final int halfWidth = width / 2;
-
-            // Hedef boyuta yaklaşana kadar 2'ye bölerek küçült (2, 4, 8, 16...)
-            while ((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth) {
-                inSampleSize *= 2;
-            }
+    static int calculateInSampleSize(BitmapFactory.Options options, int requiredWidth, int requiredHeight) {
+        int sampleSize = 1;
+        int width = options.outWidth;
+        int height = options.outHeight;
+        while ((width / (sampleSize * 2)) >= requiredWidth
+                || (height / (sampleSize * 2)) >= requiredHeight) {
+            sampleSize *= 2;
         }
-        return inSampleSize;
+        return sampleSize;
     }
 }
