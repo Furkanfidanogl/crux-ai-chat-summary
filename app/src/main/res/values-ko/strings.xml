@@ -81,7 +81,7 @@
     <string name="msg_invalid_url">잘못된 링크입니다! URL을 확인해 주세요.</string>
     <string name="msg_unsupported_link">웹 기사만 지원됩니다! 소셜 미디어 또는 YouTube 링크는 허용되지 않습니다.</string>
     <string name="msg_limit_error_title">일일 한도 초과! 🛑</string>
-    <string name="msg_limit_error_content">오늘의 크레딧을 모두 사용했습니다. 20 크레딧을 받으려면 프리미엄으로 업그레이드하세요!</string>
+    <string name="msg_limit_error_content">오늘의 크레딧을 모두 사용했습니다. 30 크레딧을 받으려면 프리미엄으로 업그레이드하세요!</string>
 
     <string name="menu_document">문서</string>
     <string name="menu_data">데이터/CSV</string>
@@ -139,14 +139,14 @@
     <string name="plan_starter_title">스타터 플랜</string>
     <string name="plan_free_price">무료</string>
     <string name="plan_feat_unlimited_chat">✓ 무제한 텍스트 채팅</string>
-    <string name="plan_feat_3_credits">✓ 일일 3 크레딧</string>
+    <string name="plan_feat_10_credits">✓ 일일 10 크레딧</string>
     <string name="plan_credits_desc">(텍스트, 문서, 이미지, 오디오 또는 링크용)</string>
     <string name="plan_feat_std_support">✗ 표준 지원</string>
     <string name="plan_premium_title">프리미엄</string>
     <string name="plan_price_monthly">$4.99</string>
     <string name="plan_per_month">/월</string>
     <string name="plan_premium_subtitle">무료 플랜의 모든 기능 +:</string>
-    <string name="plan_feat_20_credits">일일 20 크레딧</string>
+    <string name="plan_feat_30_credits">일일 30 크레딧</string>
     <string name="plan_feat_more_analyze">더 많은 문서, 이미지, 오디오 분석</string>
     <string name="plan_feat_priority">우선 지원</string>
     <string name="plan_feat_early_access">새로운 기능 얼리 액세스</string>
@@ -195,7 +195,7 @@
     <string name="msg_reset_email_sent">재설정 링크 발송 완료! 받은 편지함과 스팸함을 확인해 주세요.</string>
     <string name="msg_logged_out">로그아웃되었습니다</string>
     <string name="_2026_crux_ai_all_rights_reserved">© 2026 Crux AI. All rights reserved.</string>
-    <string name="version_1_0_0">버전 1.2.1</string>
+    <string name="version_1_0_0">버전 1.2.2</string>
     <string name="analyze_link">링크 분석 🔗</string>
     <string name="paste_a_web_site_link_to_summarize">요약할 웹사이트 링크를 붙여주세요.</string>
     <string name="summarize">요약하기</string>

@@ -80,7 +80,7 @@
     <string name="msg_invalid_url">Geçersiz bağlantı! Lütfen URL\'yi kontrol edin.</string>
     <string name="msg_unsupported_link">Yalnızca Web Siteleri desteklenir! Sosyal medya ve Youtube linklerine izin verilmez.</string>
     <string name="msg_limit_error_title">Günlük Limit Doldu! 🛑</string>
-    <string name="msg_limit_error_content">Bugünlük kredin bitti. Devam etmek için Premium\'a geçerek 20 kredi kazan!</string>
+    <string name="msg_limit_error_content">Bugünlük kredin bitti. Devam etmek için Premium\'a geçerek 30 kredi kazan!</string>
 
     <string name="menu_document">Belge</string>
     <string name="menu_data">Veri/CSV</string>
@@ -138,14 +138,14 @@
     <string name="plan_starter_title">Başlangıç Planı</string>
     <string name="plan_free_price">Ücretsiz</string>
     <string name="plan_feat_unlimited_chat">✓ Sınırsız Metin Sohbeti</string>
-    <string name="plan_feat_3_credits">✓ Günlük 3 Kredi</string>
+    <string name="plan_feat_10_credits">✓ Günlük 10 Kredi</string>
     <string name="plan_credits_desc">(Metin, Belge, Resim, Ses veya Bağlantı için)</string>
     <string name="plan_feat_std_support">✗ Standart Destek</string>
     <string name="plan_premium_title">Premium</string>
     <string name="plan_price_monthly">₺99.99</string>
     <string name="plan_per_month">/ay</string>
     <string name="plan_premium_subtitle">Ücretsiz plandaki her şey ve:</string>
-    <string name="plan_feat_20_credits">Günlük 20 Kredi</string>
+    <string name="plan_feat_30_credits">Günlük 30 Kredi</string>
     <string name="plan_feat_more_analyze">Daha fazla belge, resim, ses analizi</string>
     <string name="plan_feat_priority">Öncelikli Destek</string>
     <string name="plan_feat_early_access">Yeni özelliklere erken erişim</string>
@@ -154,7 +154,7 @@
 
     <string name="limit_reached_title">Günlük Limit Aşıldı</string>
     <string name="limit_reached_msg_free">Bugünkü ücretsiz haklarınızı doldurdunuz. Daha fazlası için Premium üyelik alın.</string>
-    <string name="limit_reached_msg_premium">Bugünkü günlük limitinizi (20/20) doldurdunuz. Yarın kredileriniz yenilenecek!</string>
+    <string name="limit_reached_msg_premium">Bugünkü günlük limitinizi (30/30) doldurdunuz. Yarın kredileriniz yenilenecek!</string>
     <string name="btn_upgrade">Pro\'ya Yükselt</string>
     <string name="premium_user">Premium Üye 👑</string>
     <string name="free_user">Ücretsiz Plan</string>
@@ -193,7 +193,7 @@
     <string name="error_payment_failed">Ödeme başarısız oldu. Lütfen daha sonra tekrar deneyin.</string>
     <string name="msg_logged_out">Çıkış yapıldı</string>
     <string name="_2026_crux_ai_all_rights_reserved">© 2026 Crux AI. Tüm hakları saklıdır.</string>
-    <string name="version_1_0_0">Sürüm 1.2.1</string>
+    <string name="version_1_0_0">Sürüm 1.2.2</string>
     <string name="analyze_link">Bağlantıyı Analiz Et 🔗</string>
     <string name="paste_a_web_site_link_to_summarize">Özetlemek için bir web sitesi bağlantısı yapıştırın.</string>
     <string name="summarize">Özetle</string>

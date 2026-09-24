@@ -141,7 +141,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="@string/plan_feat_3_credits"
+                        android:text="@string/plan_feat_10_credits"
                         android:textStyle="bold"
                         android:textColor="#555555" />
 
@@ -245,7 +245,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="12dp"
-                                android:text="@string/plan_feat_20_credits"
+                                android:text="@string/plan_feat_30_credits"
                                 android:textColor="#333333"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />

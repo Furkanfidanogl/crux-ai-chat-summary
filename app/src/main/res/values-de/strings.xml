@@ -81,7 +81,7 @@
     <string name="msg_invalid_url">Ungültiger Link! Bitte überprüfen Sie die URL.</string>
     <string name="msg_unsupported_link">Nur Webartikel werden unterstützt! Social Media oder YouTube-Links sind nicht erlaubt.</string>
     <string name="msg_limit_error_title">Tageslimit erreicht! 🛑</string>
-    <string name="msg_limit_error_content">Sie haben alle Credits für heute verbraucht. Upgrade auf Premium für 20 Credits!</string>
+    <string name="msg_limit_error_content">Sie haben alle Credits für heute verbraucht. Upgrade auf Premium für 30 Credits!</string>
 
     <string name="menu_document">Dokument</string>
     <string name="menu_data">Daten/CSV</string>
@@ -139,14 +139,14 @@
     <string name="plan_starter_title">Starter-Plan</string>
     <string name="plan_free_price">Kostenlos</string>
     <string name="plan_feat_unlimited_chat">✓ Unbegrenzter Text-Chat</string>
-    <string name="plan_feat_3_credits">✓ 3 Credits / Tag</string>
+    <string name="plan_feat_10_credits">✓ 10 Credits / Tag</string>
     <string name="plan_credits_desc">(Für Text, Dok, Bild, Audio oder Link)</string>
     <string name="plan_feat_std_support">✗ Standard-Support</string>
     <string name="plan_premium_title">Premium</string>
     <string name="plan_price_monthly">4,99 $</string>
     <string name="plan_per_month">/Monat</string>
     <string name="plan_premium_subtitle">Alles aus Kostenlos, plus:</string>
-    <string name="plan_feat_20_credits">20 Credits / Tag</string>
+    <string name="plan_feat_30_credits">30 Credits / Tag</string>
     <string name="plan_feat_more_analyze">Mehr Dok, Bild, Audio oder Link analysieren</string>
     <string name="plan_feat_priority">Bevorzugter Support</string>
     <string name="plan_feat_early_access">Früherer Zugriff auf neue Funktionen</string>
@@ -195,7 +195,7 @@
     <string name="msg_reset_email_sent">Reset-Link gesendet! Bitte prüfen Sie Posteingang und Spam.</string>
     <string name="msg_logged_out">Abgemeldet</string>
     <string name="_2026_crux_ai_all_rights_reserved">© 2026 Crux AI. Alle Rechte vorbehalten.</string>
-    <string name="version_1_0_0">Version 1.2.1</string>
+    <string name="version_1_0_0">Version 1.2.2</string>
     <string name="analyze_link">Link analysieren 🔗</string>
     <string name="paste_a_web_site_link_to_summarize">Fügen Sie einen Website-Link zum Zusammenfassen ein.</string>
     <string name="summarize">Zusammenfassen</string>

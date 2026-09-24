@@ -28,6 +28,8 @@ import java.util.Locale;
 import java.util.UUID;
 
 public class FirebaseDBManager {
+    private static final int FREE_DAILY_LIMIT = 10;
+    private static final int PREMIUM_DAILY_LIMIT = 30;
 
     private static final String COLLECTION_USERS = "users";
     private final FirebaseFirestore db;
@@ -166,7 +168,7 @@ public class FirebaseDBManager {
 
             int currentCredits = user.getDaily_credits();
             boolean isPremium = "premium".equals(user.getPlan_type());
-            int limit = isPremium ? 20 : 3;
+            int limit = isPremium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
 
             if (currentCredits < limit) {
                 return "OK";

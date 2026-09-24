@@ -80,7 +80,7 @@
     <string name="msg_invalid_url">Invalid link! Please check the URL.</string>
     <string name="msg_unsupported_link">Only Web Articles are supported! Social media or Youtube links are not allowed.</string>
     <string name="msg_limit_error_title">Daily Limit Reached! 🛑</string>
-    <string name="msg_limit_error_content">You used all your credits for today. Upgrade to Premium to get 20 credits!</string>
+    <string name="msg_limit_error_content">You used all your credits for today. Upgrade to Premium to get 30 credits!</string>
 
     <string name="menu_document">Document</string>
     <string name="menu_data">Data/CSV</string>
@@ -138,14 +138,14 @@
     <string name="plan_starter_title">Starter Plan</string>
     <string name="plan_free_price">Free</string>
     <string name="plan_feat_unlimited_chat">✓ Unlimited Text Chat</string>
-    <string name="plan_feat_3_credits">✓ 3 Credits / Day</string>
+    <string name="plan_feat_10_credits">✓ 10 Credits / Day</string>
     <string name="plan_credits_desc">(For Text, Doc, Image, Audio or Link)</string>
     <string name="plan_feat_std_support">✗ Standard Support</string>
     <string name="plan_premium_title">Premium</string>
     <string name="plan_price_monthly">$4.99</string>
     <string name="plan_per_month">/mo</string>
     <string name="plan_premium_subtitle">Everything in Free, plus:</string>
-    <string name="plan_feat_20_credits">20 Credits / Day</string>
+    <string name="plan_feat_30_credits">30 Credits / Day</string>
     <string name="plan_feat_more_analyze">Analyze more Doc, Image, Audio or Link</string>
     <string name="plan_feat_priority">Priority Support</string>
     <string name="plan_feat_early_access">Early Access to New Features</string>
@@ -194,7 +194,7 @@
     <string name="msg_reset_email_sent">Reset link sent! Please check your inbox and spam folder.</string>
     <string name="msg_logged_out">Logged out</string>
     <string name="_2026_crux_ai_all_rights_reserved">© 2026 Crux AI. All rights reserved.</string>
-    <string name="version_1_0_0">Version 1.2.1</string>
+    <string name="version_1_0_0">Version 1.2.2</string>
     <string name="analyze_link">Analyze Link 🔗</string>
     <string name="paste_a_web_site_link_to_summarize">Paste a Web Site link to summarize.</string>
     <string name="summarize">Summarize</string>

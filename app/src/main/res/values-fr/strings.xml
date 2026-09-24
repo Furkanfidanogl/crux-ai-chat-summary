@@ -81,7 +81,7 @@
     <string name="msg_invalid_url">Lien invalide ! Veuillez vérifier l\'URL.</string>
     <string name="msg_unsupported_link">Seuls les articles web sont supportés ! Pas de réseaux sociaux ou YouTube.</string>
     <string name="msg_limit_error_title">Limite quotidienne atteinte ! 🛑</string>
-    <string name="msg_limit_error_content">Vous avez utilisé tous vos crédits. Passez Premium pour 20 crédits !</string>
+    <string name="msg_limit_error_content">Vous avez utilisé tous vos crédits. Passez Premium pour 30 crédits !</string>
 
     <string name="menu_document">Document</string>
     <string name="menu_data">Données/CSV</string>
@@ -139,14 +139,14 @@
     <string name="plan_starter_title">Plan Starter</string>
     <string name="plan_free_price">Gratuit</string>
     <string name="plan_feat_unlimited_chat">✓ Chat texte illimité</string>
-    <string name="plan_feat_3_credits">✓ 3 Crédits / Jour</string>
+    <string name="plan_feat_10_credits">✓ 10 Crédits / Jour</string>
     <string name="plan_credits_desc">(Pour Texte, Doc, Image, Audio ou Lien)</string>
     <string name="plan_feat_std_support">✗ Support Standard</string>
     <string name="plan_premium_title">Premium</string>
     <string name="plan_price_monthly">4,99 $</string>
     <string name="plan_per_month">/mois</string>
     <string name="plan_premium_subtitle">Tout du plan Gratuit, plus :</string>
-    <string name="plan_feat_20_credits">20 Crédits / Jour</string>
+    <string name="plan_feat_30_credits">30 Crédits / Jour</string>
     <string name="plan_feat_more_analyze">Plus d\'analyses (Doc, Image, Audio)</string>
     <string name="plan_feat_priority">Support Prioritaire</string>
     <string name="plan_feat_early_access">Accès anticipé aux nouveautés</string>
@@ -195,7 +195,7 @@
     <string name="msg_reset_email_sent">Lien envoyé ! Vérifiez votre boîte de réception et spams.</string>
     <string name="msg_logged_out">Déconnexion réussie</string>
     <string name="_2026_crux_ai_all_rights_reserved">© 2026 Crux AI. Tous droits réservés.</string>
-    <string name="version_1_0_0">Version 1.2.1</string>
+    <string name="version_1_0_0">Version 1.2.2</string>
     <string name="analyze_link">Analyser le lien 🔗</string>
     <string name="paste_a_web_site_link_to_summarize">Collez un lien de site Web à résumer.</string>
     <string name="summarize">Résumer</string>
