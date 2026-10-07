@@ -2,10 +2,11 @@
   "name": "cruxai-functions",
   "description": "CruxAI Firebase Cloud Functions",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "main": "index.js",
   "scripts": {
+    "test": "node --test test/*.test.cjs",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",

@@ -7,10 +7,8 @@ admin.initializeApp();
 
 // ─── CONFIG ──────────────────────────────────────────────────────
 const geminiApiKey = defineSecret("GEMINI_SECRET_KEY");
-const MODEL_NAME = "gemini-3.1-flash-lite";
+const MODEL_NAME = "gemini-3.5-flash-lite";
 const MAX_OUTPUT_TOKENS = 4096;
-const TEMPERATURE = 0.4;
-const TOP_P = 0.9;
 const DEFAULT_SYSTEM_PROMPT = "You are CruxAI. Help the user safely.";
 const MAX_TEXT_CHARS = 50_000;
 const MAX_HISTORY_ITEMS = 24;
@@ -22,6 +20,7 @@ const ALLOWED_MEDIA_TYPES = new Set(["IMAGE", "AUDIO", "DOC"]);
 // ─── REMOTE CONFIG CACHE ────────────────────────────────────────
 let cachedSystemPrompt = null;
 let promptLastFetched = 0;
+let promptFetchInFlight = null;
 const PROMPT_CACHE_TTL = 3600 * 1000;
 
 async function getSystemPrompt() {
@@ -30,23 +29,31 @@ async function getSystemPrompt() {
     return cachedSystemPrompt;
   }
 
-  try {
-    const rc = admin.remoteConfig();
-    const template = await rc.getTemplate();
-    const param = template.parameters["system_prompt"];
-    if (param && param.defaultValue && param.defaultValue.value) {
-      const val = param.defaultValue.value.trim();
-      cachedSystemPrompt = val.length > 0 ? val : DEFAULT_SYSTEM_PROMPT;
-    } else {
-      cachedSystemPrompt = DEFAULT_SYSTEM_PROMPT;
-    }
-  } catch (err) {
-    console.warn("Remote Config fetch failed, using default:", err.message);
-    cachedSystemPrompt = cachedSystemPrompt || DEFAULT_SYSTEM_PROMPT;
-  }
+  // Concurrent requests share one refresh per function instance.
+  if (!promptFetchInFlight) {
+    promptFetchInFlight = (async () => {
+      try {
+        const rc = admin.remoteConfig();
+        const template = await rc.getTemplate();
+        const param = template.parameters["system_prompt"];
+        if (param && param.defaultValue && param.defaultValue.value) {
+          const val = param.defaultValue.value.trim();
+          cachedSystemPrompt = val.length > 0 ? val : DEFAULT_SYSTEM_PROMPT;
+        } else {
+          cachedSystemPrompt = DEFAULT_SYSTEM_PROMPT;
+        }
+      } catch (err) {
+        console.warn("Remote Config fetch failed, using default:", err.message);
+        cachedSystemPrompt = cachedSystemPrompt || DEFAULT_SYSTEM_PROMPT;
+      }
 
-  promptLastFetched = now;
-  return cachedSystemPrompt;
+      promptLastFetched = now;
+      return cachedSystemPrompt;
+    })().finally(() => {
+      promptFetchInFlight = null;
+    });
+  }
+  return promptFetchInFlight;
 }
 
 // ─── MIME TYPE RESOLVER ─────────────────────────────────────────
@@ -230,8 +237,6 @@ exports.processGemini = onCall(
         config: {
           systemInstruction: systemPrompt,
           maxOutputTokens: MAX_OUTPUT_TOKENS,
-          temperature: TEMPERATURE,
-          topP: TOP_P,
         },
       });
 
